@@ -299,8 +299,8 @@ export default function App() {
           </select>
 
           <button onClick={() => setShowAdmin(true)} style={{
-            background:"transparent", border:"1px solid #282840", color:"#666",
-            borderRadius:3, padding:"4px 8px", fontSize:11, cursor:"pointer", fontFamily:"inherit",
+            background:"transparent", border:"1px solid #2a4040", color:"#5ecdc4",
+            borderRadius:3, padding:"4px 8px", fontSize:13, cursor:"pointer", fontFamily:"inherit",
           }}>⚙</button>
         </div>
 
@@ -473,8 +473,8 @@ export default function App() {
         </select>
 
         <button onClick={() => setShowAdmin(true)} style={{
-          padding:"4px 10px", fontSize:11, fontFamily:"inherit",
-          background:"transparent", border:"1px solid #282840", color:"#666",
+          padding:"4px 10px", fontSize:13, fontFamily:"inherit",
+          background:"transparent", border:"1px solid #2a4040", color:"#5ecdc4",
           borderRadius:3, cursor:"pointer",
         }}>⚙ Songs</button>
       </div>
