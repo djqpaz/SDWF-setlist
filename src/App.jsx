@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { db } from "./firebase";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { BAND_MEMBERS, SONGS } from "./data/songs";
 import SongLibrary from "./components/SongLibrary";
@@ -20,8 +22,9 @@ const DEFAULT_SHOW = () => ({
 const songMap = Object.fromEntries(SONGS.map(s => [s.id, s]));
 
 export default function App() {
-  const [shows, setShows] = useLocalStorage("sickday-shows", [DEFAULT_SHOW()]);
-  const [activeShowId, setActiveShowId] = useLocalStorage("sickday-active-show", shows[0]?.id);
+  const [shows, setShows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeShowId, setActiveShowId] = useLocalStorage("sickday-active-show", null);
   const [viewMode, setViewMode] = useState("builder");
   const [memberName, setMemberName] = useLocalStorage("sickday-member", "");
   const [printShow, setPrintShow] = useState(null);
@@ -32,6 +35,26 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
   const [toast, setToast] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "shows"), async (snapshot) => {
+      if (snapshot.empty) {
+        const s = DEFAULT_SHOW();
+        await setDoc(doc(db, "shows", s.id), s);
+        return;
+      }
+      const data = snapshot.docs
+        .map(d => ({ ...d.data(), id: d.id }))
+        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      setShows(data);
+      setLoading(false);
+      setActiveShowId(prev => {
+        if (prev && data.find(s => s.id === prev)) return prev;
+        return data[0]?.id ?? null;
+      });
+    });
+    return unsub;
+  }, []);
 
   function showToast(message, type = "success") {
     setToast({ message, type });
@@ -50,12 +73,12 @@ export default function App() {
   const activeShow = shows.find(s => s.id === activeShowId) || shows[0];
 
   function updateShow(id, updates) {
-    setShows(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
+    updateDoc(doc(db, "shows", id), updates);
   }
 
   function addShow() {
     const s = DEFAULT_SHOW();
-    setShows(prev => [...prev, s]);
+    setDoc(doc(db, "shows", s.id), s);
     setActiveShowId(s.id);
     if (isMobile) setMobileTab("setlist");
   }
@@ -64,8 +87,8 @@ export default function App() {
     if (shows.length === 1) return;
     showConfirm("Delete this show?", () => {
       const remaining = shows.filter(s => s.id !== id);
-      setShows(remaining);
-      if (activeShowId === id) setActiveShowId(remaining[0].id);
+      if (activeShowId === id) setActiveShowId(remaining[0]?.id ?? null);
+      deleteDoc(doc(db, "shows", id));
     });
   }
 
@@ -102,6 +125,16 @@ export default function App() {
       showToast(`Loaded ${suggestion.member}'s set ✓`);
     });
   }
+
+  if (loading) return (
+    <div style={{
+      height:"100dvh", background:"#0d0d1c", display:"flex",
+      alignItems:"center", justifyContent:"center",
+      color:"#5ecdc4", fontFamily:"'Georgia', serif", fontSize:14, letterSpacing:"0.1em",
+    }}>
+      Loading…
+    </div>
+  );
 
   if (!activeShow) return null;
 
