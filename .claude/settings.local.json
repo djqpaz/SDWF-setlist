@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(mkdir -p /Users/Patrick/ReactProjects/sickday-setlist/.claude)",
+      "mcp__Claude_Preview__preview_start",
+      "WebFetch(domain:sickdaywithferris.com)"
+    ]
+  }
+}
