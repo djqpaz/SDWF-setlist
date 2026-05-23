@@ -194,7 +194,7 @@ export default function App() {
 
     return (
       <div style={{
-        display:"flex", flexDirection:"column", height:"100vh",
+        display:"flex", flexDirection:"column", height:"100dvh",
         background:"#0d0d1c", color:"#e0dcd0",
         fontFamily:"'Georgia', serif", overflow:"hidden",
       }}>
@@ -323,6 +323,7 @@ export default function App() {
         <div style={{
           display:"flex", borderTop:"1px solid #1e1e36",
           background:"#09091a", flexShrink:0,
+          paddingBottom:"env(safe-area-inset-bottom, 0px)",
         }}>
           {[
             { id:"library", label:"Library" },
