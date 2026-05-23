@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SONGS } from "../data/songs";
+import { useSongs } from "../context/SongsContext";
 
 const PRESETS = [
   {
@@ -62,8 +62,8 @@ function weightedSample(pool, n) {
   return sorted.slice(0, n).map(s => s.id);
 }
 
-function generate(presetId, count, exclude) {
-  const pool = SONGS.filter(s => !exclude.has(s.id));
+function generate(songs, presetId, count, exclude) {
+  const pool = songs.filter(s => !exclude.has(s.id));
 
   if (presetId === "random") {
     return shuffle(pool).slice(0, count).map(s => s.id);
@@ -164,14 +164,17 @@ function generate(presetId, count, exclude) {
 }
 
 export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
+  const { songs } = useSongs();
   const [preset, setPreset] = useState("arc");
   const [count, setCount] = useState(12);
-  const [replaceMode, setReplaceMode] = useState("replace"); // "replace" | "add"
+  const [replaceMode, setReplaceMode] = useState("replace");
   const [preview, setPreview] = useState(null);
+
+  const songMap = Object.fromEntries(songs.map(s => [s.id, s]));
 
   function handleGenerate() {
     const exclude = replaceMode === "add" ? new Set(currentSongIds) : new Set();
-    const ids = generate(preset, count, exclude);
+    const ids = generate(songs, preset, count, exclude);
     const newIds = replaceMode === "replace" ? ids : [...currentSongIds, ...ids];
     onGenerate(newIds);
     onClose();
@@ -179,11 +182,9 @@ export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
 
   function handlePreview() {
     const exclude = replaceMode === "add" ? new Set(currentSongIds) : new Set();
-    const ids = generate(preset, count, exclude);
+    const ids = generate(songs, preset, count, exclude);
     setPreview(ids);
   }
-
-  const songMap = Object.fromEntries(SONGS.map(s => [s.id, s]));
 
   return (
     <div style={{

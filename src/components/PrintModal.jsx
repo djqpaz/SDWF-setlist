@@ -1,8 +1,8 @@
-import { SONGS } from "../data/songs";
-
-const songMap = Object.fromEntries(SONGS.map(s => [s.id, s]));
+import { useSongs } from "../context/SongsContext";
 
 export default function PrintModal({ show, onClose, onToast }) {
+  const { songs } = useSongs();
+  const songMap = Object.fromEntries(songs.map(s => [s.id, s]));
   if (!show) return null;
 
   const { name, date, venue, songIds, suggestedBy } = show;

@@ -8,11 +8,10 @@ import {
   useSortable, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { SONGS, VIBE_COLORS } from "../data/songs";
+import { VIBE_COLORS } from "../data/songs";
+import { useSongs } from "../context/SongsContext";
 
-const songMap = Object.fromEntries(SONGS.map(s => [s.id, s]));
-
-function SortableItem({ id, index, onRemove, note, onNoteChange }) {
+function SortableItem({ id, index, onRemove, note, onNoteChange, songMap }) {
   const song = songMap[id];
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(note || "");
@@ -117,6 +116,8 @@ function SortableItem({ id, index, onRemove, note, onNoteChange }) {
 }
 
 export default function SetlistBuilder({ songIds, onChange, songNotes, onNoteChange }) {
+  const { songs } = useSongs();
+  const songMap = Object.fromEntries(songs.map(s => [s.id, s]));
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -158,6 +159,7 @@ export default function SetlistBuilder({ songIds, onChange, songNotes, onNoteCha
               onRemove={handleRemove}
               note={(songNotes || {})[id] || ""}
               onNoteChange={onNoteChange}
+              songMap={songMap}
             />
           ))}
         </div>

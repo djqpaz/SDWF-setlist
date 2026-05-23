@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "./firebase";
 import { useLocalStorage } from "./hooks/useLocalStorage";
-import { BAND_MEMBERS, SONGS } from "./data/songs";
+import { BAND_MEMBERS } from "./data/songs";
+import { useSongs } from "./context/SongsContext";
 import SongLibrary from "./components/SongLibrary";
 import SetlistBuilder from "./components/SetlistBuilder";
 import PrintModal from "./components/PrintModal";
 import GenerateModal from "./components/GenerateModal";
+import SongAdmin from "./components/SongAdmin";
 import { Toast, ConfirmDialog } from "./components/Toast";
 
 const DEFAULT_SHOW = () => ({
@@ -19,9 +21,9 @@ const DEFAULT_SHOW = () => ({
   createdAt: new Date().toISOString(),
 });
 
-const songMap = Object.fromEntries(SONGS.map(s => [s.id, s]));
-
 export default function App() {
+  const { songs } = useSongs();
+  const songMap = Object.fromEntries(songs.map(s => [s.id, s]));
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeShowId, setActiveShowId] = useLocalStorage("sickday-active-show", null);
@@ -35,6 +37,7 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
   const [toast, setToast] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "shows"), async (snapshot) => {
@@ -294,6 +297,11 @@ export default function App() {
             <option value="">Who?</option>
             {BAND_MEMBERS.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
+
+          <button onClick={() => setShowAdmin(true)} style={{
+            background:"transparent", border:"1px solid #282840", color:"#666",
+            borderRadius:3, padding:"4px 8px", fontSize:11, cursor:"pointer", fontFamily:"inherit",
+          }}>⚙</button>
         </div>
 
         {/* Meta bar */}
@@ -400,6 +408,7 @@ export default function App() {
             onClose={() => setShowGenerate(false)}
           />
         )}
+        {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} />}
         {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
         {confirmDialog && (
           <ConfirmDialog
@@ -462,6 +471,12 @@ export default function App() {
           <option value="">Who are you?</option>
           {BAND_MEMBERS.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
+
+        <button onClick={() => setShowAdmin(true)} style={{
+          padding:"4px 10px", fontSize:11, fontFamily:"inherit",
+          background:"transparent", border:"1px solid #282840", color:"#666",
+          borderRadius:3, cursor:"pointer",
+        }}>⚙ Songs</button>
       </div>
 
       {metaBar}
@@ -526,6 +541,7 @@ export default function App() {
           onClose={() => setShowGenerate(false)}
         />
       )}
+      {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} />}
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
       {confirmDialog && (
         <ConfirmDialog
@@ -583,6 +599,8 @@ function SuggestionsPanel({ suggestions, onLoad }) {
 }
 
 function SuggestionSongListInner({ songIds }) {
+  const { songs } = useSongs();
+  const songMap = Object.fromEntries(songs.map(s => [s.id, s]));
   const preview = songIds.slice(0, 8);
   const rest = songIds.length - 8;
   return (

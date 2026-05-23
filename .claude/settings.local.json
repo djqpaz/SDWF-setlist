@@ -5,7 +5,13 @@
       "Bash(curl -s http://localhost:5173)",
       "Bash(mkdir -p /Users/Patrick/ReactProjects/sickday-setlist/.claude)",
       "mcp__Claude_Preview__preview_start",
-      "WebFetch(domain:sickdaywithferris.com)"
+      "WebFetch(domain:sickdaywithferris.com)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit -m 'Fix mobile viewport clipping on real devices *)",
+      "Bash(git commit *)"
     ]
   }
 }

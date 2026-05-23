@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { SONGS, VIBE_COLORS } from "../data/songs";
+import { VIBE_COLORS } from "../data/songs";
+import { useSongs } from "../context/SongsContext";
 
 const SORT_MODES = [
   { id: "title",      label: "A–Z"        },
@@ -26,6 +27,7 @@ function sortSongs(songs, mode, bpmDesc) {
 }
 
 export default function SongLibrary({ setlistSongIds, onAdd }) {
+  const { songs } = useSongs();
   const [sortMode, setSortMode] = useState("title");
   const [bpmDesc, setBpmDesc] = useState(false);
   const [search, setSearch] = useState("");
@@ -33,10 +35,10 @@ export default function SongLibrary({ setlistSongIds, onAdd }) {
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     const pool = q
-      ? SONGS.filter(s => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q))
-      : SONGS;
+      ? songs.filter(s => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q))
+      : songs;
     return sortSongs(pool, sortMode, bpmDesc);
-  }, [sortMode, bpmDesc, search]);
+  }, [songs, sortMode, bpmDesc, search]);
 
   const inSet = new Set(setlistSongIds);
 
