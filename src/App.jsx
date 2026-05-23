@@ -96,6 +96,11 @@ export default function App() {
     updateShow(activeShow.id, { songIds: ids });
   }
 
+  function updateSongNote(songId, text) {
+    const notes = { ...(activeShow.songNotes || {}), [songId]: text };
+    updateShow(activeShow.id, { songNotes: notes });
+  }
+
   function addSong(songId) {
     if (!activeShow.songIds.includes(songId)) {
       updateShow(activeShow.id, { songIds: [...activeShow.songIds, songId] });
@@ -334,7 +339,7 @@ export default function App() {
                 <span style={{ color:"#555", fontSize:9 }}>drag to reorder</span>
               </div>
               <div style={{ flex:1, overflowY:"auto" }}>
-                <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} />
+                <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} songNotes={activeShow.songNotes || {}} onNoteChange={updateSongNote} />
               </div>
               {/* Action footer */}
               <div style={{
@@ -504,7 +509,7 @@ export default function App() {
                 Set List — drag to reorder
               </div>
               <div style={{ flex:1 }}>
-                <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} />
+                <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} songNotes={activeShow.songNotes || {}} onNoteChange={updateSongNote} />
               </div>
             </>
           ) : (
