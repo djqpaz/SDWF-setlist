@@ -2,7 +2,7 @@ import { SONGS } from "../data/songs";
 
 const songMap = Object.fromEntries(SONGS.map(s => [s.id, s]));
 
-export default function PrintModal({ show, onClose }) {
+export default function PrintModal({ show, onClose, onToast }) {
   if (!show) return null;
 
   const { name, date, venue, songIds, suggestedBy } = show;
@@ -28,7 +28,8 @@ export default function PrintModal({ show, onClose }) {
     ].filter(l => l !== undefined).join("\n");
 
     navigator.clipboard.writeText(lines).then(() => {
-      alert("Set list copied to clipboard!");
+      onToast?.("Copied to clipboard ✓");
+      onClose();
     });
   }
 

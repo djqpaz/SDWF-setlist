@@ -5,6 +5,7 @@ import SongLibrary from "./components/SongLibrary";
 import SetlistBuilder from "./components/SetlistBuilder";
 import PrintModal from "./components/PrintModal";
 import GenerateModal from "./components/GenerateModal";
+import { Toast, ConfirmDialog } from "./components/Toast";
 
 const DEFAULT_SHOW = () => ({
   id: crypto.randomUUID(),
@@ -29,6 +30,16 @@ export default function App() {
   const [editingName, setEditingName] = useState(false);
   const [mobileTab, setMobileTab] = useState("library");
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+  const [toast, setToast] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  function showToast(message, type = "success") {
+    setToast({ message, type });
+  }
+
+  function showConfirm(message, onConfirm) {
+    setConfirmDialog({ message, onConfirm });
+  }
 
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 640);
@@ -51,10 +62,11 @@ export default function App() {
 
   function deleteShow(id) {
     if (shows.length === 1) return;
-    if (!confirm("Delete this show?")) return;
-    const remaining = shows.filter(s => s.id !== id);
-    setShows(remaining);
-    if (activeShowId === id) setActiveShowId(remaining[0].id);
+    showConfirm("Delete this show?", () => {
+      const remaining = shows.filter(s => s.id !== id);
+      setShows(remaining);
+      if (activeShowId === id) setActiveShowId(remaining[0].id);
+    });
   }
 
   function setSongIds(ids) {
@@ -68,8 +80,8 @@ export default function App() {
   }
 
   function saveSuggestion() {
-    if (!memberName) return alert("Pick your name first.");
-    if (activeShow.songIds.length === 0) return alert("Add some songs first!");
+    if (!memberName) return showToast("Pick your name first", "error");
+    if (activeShow.songIds.length === 0) return showToast("Add some songs first!", "error");
     const existing = activeShow.suggestions || [];
     const filtered = existing.filter(s => s.member !== memberName);
     updateShow(activeShow.id, {
@@ -79,14 +91,16 @@ export default function App() {
         savedAt: new Date().toISOString(),
       }]
     });
-    alert(`Set saved as ${memberName}'s suggestion!`);
+    showToast(`Saved as ${memberName}'s suggestion ✓`);
   }
 
   function loadSuggestion(suggestion) {
-    if (!confirm(`Load ${suggestion.member}'s suggested set? This will replace the current set list.`)) return;
-    updateShow(activeShow.id, { songIds: [...suggestion.songIds] });
-    setViewMode("builder");
-    if (isMobile) setMobileTab("setlist");
+    showConfirm(`Load ${suggestion.member}'s set? This will replace the current set list.`, () => {
+      updateShow(activeShow.id, { songIds: [...suggestion.songIds] });
+      setViewMode("builder");
+      if (isMobile) setMobileTab("setlist");
+      showToast(`Loaded ${suggestion.member}'s set ✓`);
+    });
   }
 
   if (!activeShow) return null;
@@ -340,12 +354,20 @@ export default function App() {
           ))}
         </div>
 
-        <PrintModal show={printShow} onClose={() => setPrintShow(null)} />
+        <PrintModal show={printShow} onClose={() => setPrintShow(null)} onToast={showToast} />
         {showGenerate && (
           <GenerateModal
             currentSongIds={activeShow.songIds}
             onGenerate={(ids) => { setSongIds(ids); setMobileTab("setlist"); }}
             onClose={() => setShowGenerate(false)}
+          />
+        )}
+        {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
+        {confirmDialog && (
+          <ConfirmDialog
+            message={confirmDialog.message}
+            onConfirm={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }}
+            onCancel={() => setConfirmDialog(null)}
           />
         )}
       </div>
@@ -458,12 +480,20 @@ export default function App() {
         </div>
       </div>
 
-      <PrintModal show={printShow} onClose={() => setPrintShow(null)} />
+      <PrintModal show={printShow} onClose={() => setPrintShow(null)} onToast={showToast} />
       {showGenerate && (
         <GenerateModal
           currentSongIds={activeShow.songIds}
           onGenerate={setSongIds}
           onClose={() => setShowGenerate(false)}
+        />
+      )}
+      {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
+      {confirmDialog && (
+        <ConfirmDialog
+          message={confirmDialog.message}
+          onConfirm={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }}
+          onCancel={() => setConfirmDialog(null)}
         />
       )}
     </div>
