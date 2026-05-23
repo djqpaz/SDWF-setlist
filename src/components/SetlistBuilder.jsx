@@ -10,7 +10,12 @@ import { CSS } from "@dnd-kit/utilities";
 import { VIBE_COLORS } from "../data/songs";
 import { useSongs } from "../context/SongsContext";
 
-function SortableItem({ id, index, onRemove, songMap }) {
+function fmtDuration(secs) {
+  if (!secs) return "";
+  return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
+}
+
+function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev }) {
   const song = songMap[id];
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
@@ -25,10 +30,16 @@ function SortableItem({ id, index, onRemove, songMap }) {
 
   return (
     <div ref={setNodeRef} style={style}>
+      {sameKeyAsPrev && (
+        <div style={{ fontSize:10, color:"#c09040", paddingLeft:44, paddingBottom:2, marginTop:-1 }}>
+          ⚠ same key as previous song
+        </div>
+      )}
       <div style={{
         display:"flex", alignItems:"center", gap:10,
         padding:"10px 10px", borderRadius:4, marginBottom:3,
-        background:"#141428", border:"1px solid #1e1e36",
+        background:"#141428",
+        border: sameKeyAsPrev ? "1px solid #6a4a10" : "1px solid #1e1e36",
         userSelect:"none",
       }}>
         {/* drag handle */}
@@ -61,6 +72,21 @@ function SortableItem({ id, index, onRemove, songMap }) {
             </div>
           )}
         </div>
+        {/* key + duration */}
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4, flexShrink:0 }}>
+          {song.key && (
+            <div style={{
+              fontSize:11, fontWeight:"bold", color:"#0d0d1c",
+              background: sameKeyAsPrev ? "#c09040" : "#5ecdc4",
+              borderRadius:3, padding:"2px 6px", letterSpacing:"0.05em",
+            }}>
+              {song.key}
+            </div>
+          )}
+          {song.duration && (
+            <div style={{ fontSize:11, color:"#666" }}>{fmtDuration(song.duration)}</div>
+          )}
+        </div>
         {/* remove */}
         <button
           onClick={() => onRemove(id)}
@@ -75,6 +101,10 @@ function SortableItem({ id, index, onRemove, songMap }) {
       </div>
     </div>
   );
+}
+
+export function calcTotalDuration(songIds, songMap) {
+  return songIds.reduce((sum, id) => sum + (songMap[id]?.duration || 0), 0);
 }
 
 export default function SetlistBuilder({ songIds, onChange }) {
@@ -120,6 +150,7 @@ export default function SetlistBuilder({ songIds, onChange }) {
               index={i}
               onRemove={handleRemove}
               songMap={songMap}
+              sameKeyAsPrev={i > 0 && songMap[id]?.key && songMap[songIds[i-1]]?.key === songMap[id]?.key}
             />
           ))}
         </div>

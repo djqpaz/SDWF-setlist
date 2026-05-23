@@ -114,7 +114,7 @@ export default function SongLibrary({ setlistSongIds, onAdd }) {
                   {song.title}
                 </div>
                 <div style={{ fontSize:12, color:"#999", marginTop:1 }}>
-                  {song.artist} · {song.genre} · {song.bpm} BPM
+                  {song.artist} · {song.genre} · {song.bpm} BPM{song.key ? ` · ${song.key}` : ""}
                 </div>
               </div>
               {added

@@ -7,7 +7,19 @@ import { VIBE_COLORS } from "../data/songs";
 
 const VIBES = ["anthemic","epic","fun","groove","joy","love","nostalgia","pride","singalong","soulful","swagger","tension","uplift"];
 
-const EMPTY_SONG = { title:"", artist:"", bpm:"", genre:"", vibe:"groove", year:"", popularity:"", note:"" };
+const EMPTY_SONG = { title:"", artist:"", bpm:"", genre:"", vibe:"groove", year:"", popularity:"", key:"", duration:"", note:"" };
+
+function parseDuration(str) {
+  const parts = String(str).split(":");
+  if (parts.length === 2) return Number(parts[0]) * 60 + Number(parts[1]);
+  return Number(str) || 0;
+}
+
+function fmtDuration(secs) {
+  if (!secs) return "";
+  const m = Math.floor(secs / 60), s = secs % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
 
 function Field({ label, value, onChange, type = "text", options }) {
   const inputStyle = {
@@ -41,6 +53,7 @@ function SongForm({ initial, onSave, onCancel, saving }) {
       bpm: Number(form.bpm),
       year: Number(form.year) || new Date().getFullYear(),
       popularity: Number(form.popularity) || 70,
+      duration: parseDuration(form.duration),
     });
   }
 
@@ -53,6 +66,8 @@ function SongForm({ initial, onSave, onCancel, saving }) {
         <Field label="Title *" value={form.title} onChange={set("title")} />
         <Field label="Artist *" value={form.artist} onChange={set("artist")} />
         <Field label="BPM *" value={form.bpm} onChange={set("bpm")} type="number" />
+        <Field label="Key (e.g. G, Am, C#)" value={form.key || ""} onChange={set("key")} />
+        <Field label="Duration (m:ss)" value={fmtDuration(form.duration) || form.duration} onChange={set("duration")} />
         <Field label="Genre" value={form.genre} onChange={set("genre")} />
         <Field label="Vibe" value={form.vibe} onChange={set("vibe")} options={VIBES} />
         <Field label="Year" value={form.year} onChange={set("year")} type="number" />
@@ -196,7 +211,7 @@ export default function SongAdmin({ onClose }) {
               <div key={song.id} style={{ marginBottom:4 }}>
                 {isEditing ? (
                   <SongForm
-                    initial={{ ...song, bpm: String(song.bpm), year: String(song.year), popularity: String(song.popularity), note: song.note || "" }}
+                    initial={{ ...song, bpm: String(song.bpm), year: String(song.year), popularity: String(song.popularity), key: song.key || "", duration: song.duration || "", note: song.note || "" }}
                     onSave={(data) => handleEdit(song, data)}
                     onCancel={() => setEditingId(null)}
                     saving={saving}

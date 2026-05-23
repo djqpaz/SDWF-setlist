@@ -5,7 +5,7 @@ import { useLocalStorage } from "./hooks/useLocalStorage";
 import { BAND_MEMBERS } from "./data/songs";
 import { useSongs } from "./context/SongsContext";
 import SongLibrary from "./components/SongLibrary";
-import SetlistBuilder from "./components/SetlistBuilder";
+import SetlistBuilder, { calcTotalDuration } from "./components/SetlistBuilder";
 import PrintModal from "./components/PrintModal";
 import GenerateModal from "./components/GenerateModal";
 import SongAdmin from "./components/SongAdmin";
@@ -129,6 +129,15 @@ export default function App() {
       showToast(`Loaded ${suggestion.member}'s set ✓`);
     });
   }
+
+  function fmtDuration(secs) {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m ${String(s).padStart(2,"0")}s`;
+  }
+  const totalDuration = calcTotalDuration(activeShow?.songIds || [], songMap);
 
   if (loading) return (
     <div style={{
@@ -339,7 +348,7 @@ export default function App() {
                 borderBottom:"1px solid #1a1a30",
                 display:"flex", justifyContent:"space-between", alignItems:"center",
               }}>
-                <span>Set List — {activeShow.songIds.length} songs</span>
+                <span>Set List — {activeShow.songIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}</span>
                 <span style={{ color:"#555", fontSize:9 }}>drag to reorder</span>
               </div>
               <div style={{ flex:1, overflowY:"auto" }}>
@@ -517,7 +526,7 @@ export default function App() {
                 letterSpacing:"0.2em", textTransform:"uppercase",
                 borderBottom:"1px solid #1a1a30", flexShrink:0,
               }}>
-                Set List — drag to reorder
+                Set List — {activeShow.songIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""} · drag to reorder
               </div>
               <div style={{ flex:1 }}>
                 <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} />

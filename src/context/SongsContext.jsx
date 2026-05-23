@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { collection, doc, onSnapshot, writeBatch } from "firebase/firestore";
+import { collection, doc, onSnapshot, writeBatch, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { SONGS } from "../data/songs";
 
 const SongsContext = createContext({ songs: [], loading: true });
+
+const seedMap = Object.fromEntries(SONGS.map(s => [String(s.id), s]));
 
 export function SongsProvider({ children }) {
   const [songs, setSongs] = useState([]);
@@ -17,6 +19,27 @@ export function SongsProvider({ children }) {
         await batch.commit();
         return;
       }
+
+      // Migrate any songs missing key or duration
+      const needsUpdate = snapshot.docs.filter(d => {
+        const data = d.data();
+        return !data.key || !data.duration;
+      });
+      if (needsUpdate.length > 0) {
+        const batch = writeBatch(db);
+        needsUpdate.forEach(d => {
+          const seed = seedMap[d.id];
+          if (seed) {
+            const updates = {};
+            if (!d.data().key) updates.key = seed.key;
+            if (!d.data().duration) updates.duration = seed.duration;
+            batch.update(doc(db, "songs", d.id), updates);
+          }
+        });
+        await batch.commit();
+        return;
+      }
+
       const data = snapshot.docs.map(d => d.data());
       setSongs(data);
       setLoading(false);
