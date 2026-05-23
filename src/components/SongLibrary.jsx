@@ -60,7 +60,7 @@ export default function SongLibrary({ setlistSongIds, onAdd }) {
       </div>
 
       {/* Sort bar */}
-      <div style={{ display:"flex", gap:4, padding:"0 16px 10px", flexWrap:"wrap" }}>
+      <div style={{ display:"flex", gap:4, padding:"0 16px 10px", flexWrap:"wrap", overflowX:"auto" }}>
         {SORT_MODES.map(m => {
           const isBpm = m.id === "bpm";
           const active = sortMode === m.id;
@@ -74,8 +74,8 @@ export default function SongLibrary({ setlistSongIds, onAdd }) {
                 if (isBpm) setBpmDesc(false);
               }
             }} style={{
-              padding:"4px 10px", borderRadius:3, fontSize:11, cursor:"pointer",
-              fontFamily:"inherit", letterSpacing:"0.08em",
+              padding:"5px 10px", borderRadius:3, fontSize:12, cursor:"pointer",
+              fontFamily:"inherit", letterSpacing:"0.05em", whiteSpace:"nowrap",
               border: active ? "1px solid #f07272" : "1px solid #282840",
               background: active ? "#2a1020" : "transparent",
               color: active ? "#f07272" : "#888",
@@ -110,10 +110,10 @@ export default function SongLibrary({ setlistSongIds, onAdd }) {
                 background: VIBE_COLORS[song.vibe] || "#444",
               }} />
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:13, color:"#ddd", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                <div style={{ fontSize:15, color:"#ddd", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                   {song.title}
                 </div>
-                <div style={{ fontSize:10, color:"#999", marginTop:1 }}>
+                <div style={{ fontSize:12, color:"#999", marginTop:1 }}>
                   {song.artist} · {song.genre} · {song.bpm} BPM
                 </div>
               </div>

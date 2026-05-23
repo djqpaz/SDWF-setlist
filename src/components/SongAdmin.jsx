@@ -7,7 +7,7 @@ import { VIBE_COLORS } from "../data/songs";
 
 const VIBES = ["anthemic","epic","fun","groove","joy","love","nostalgia","pride","singalong","soulful","swagger","tension","uplift"];
 
-const EMPTY_SONG = { title:"", artist:"", bpm:"", genre:"", vibe:"groove", year:"", popularity:"" };
+const EMPTY_SONG = { title:"", artist:"", bpm:"", genre:"", vibe:"groove", year:"", popularity:"", note:"" };
 
 function Field({ label, value, onChange, type = "text", options }) {
   const inputStyle = {
@@ -57,6 +57,21 @@ function SongForm({ initial, onSave, onCancel, saving }) {
         <Field label="Vibe" value={form.vibe} onChange={set("vibe")} options={VIBES} />
         <Field label="Year" value={form.year} onChange={set("year")} type="number" />
         <Field label="Popularity (1–100)" value={form.popularity} onChange={set("popularity")} type="number" />
+      </div>
+      <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+        <label style={{ fontSize:10, color:"#888", letterSpacing:"0.1em", textTransform:"uppercase" }}>Sound Notes</label>
+        <textarea
+          value={form.note || ""}
+          onChange={e => set("note")(e.target.value)}
+          placeholder="Key, cues, EQ notes, tempo changes…"
+          rows={3}
+          style={{
+            width:"100%", background:"#18182c", border:"1px solid #2a2a50",
+            color:"#e0dcd0", padding:"6px 8px", borderRadius:3,
+            fontSize:13, fontFamily:"'Georgia', serif", outline:"none",
+            boxSizing:"border-box", resize:"vertical", lineHeight:1.5,
+          }}
+        />
       </div>
       <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
         <button onClick={onCancel} style={{
@@ -181,7 +196,7 @@ export default function SongAdmin({ onClose }) {
               <div key={song.id} style={{ marginBottom:4 }}>
                 {isEditing ? (
                   <SongForm
-                    initial={{ ...song, bpm: String(song.bpm), year: String(song.year), popularity: String(song.popularity) }}
+                    initial={{ ...song, bpm: String(song.bpm), year: String(song.year), popularity: String(song.popularity), note: song.note || "" }}
                     onSave={(data) => handleEdit(song, data)}
                     onCancel={() => setEditingId(null)}
                     saving={saving}
@@ -197,12 +212,17 @@ export default function SongAdmin({ onClose }) {
                       background: VIBE_COLORS[song.vibe] || "#444",
                     }} />
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:13, color:"#e0dcd0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                      <div style={{ fontSize:14, color:"#e0dcd0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                         {song.title}
                       </div>
-                      <div style={{ fontSize:10, color:"#999", marginTop:1 }}>
+                      <div style={{ fontSize:11, color:"#999", marginTop:1 }}>
                         {song.artist} · {song.genre} · {song.bpm} BPM · {song.vibe}
                       </div>
+                      {song.note && (
+                        <div style={{ fontSize:11, color:"#7a9a90", marginTop:3, fontStyle:"italic", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                          {song.note}
+                        </div>
+                      )}
                     </div>
                     <button onClick={() => { setEditingId(song.id); setAdding(false); }} style={{
                       padding:"3px 10px", background:"transparent", border:"1px solid #282840",
