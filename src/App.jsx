@@ -8,6 +8,8 @@ import SongLibrary from "./components/SongLibrary";
 import SetlistBuilder, { calcTotalDuration } from "./components/SetlistBuilder";
 import PrintModal from "./components/PrintModal";
 import GenerateModal from "./components/GenerateModal";
+import ShowSetlist from "./components/ShowSetlist";
+import VotePanel from "./components/VotePanel";
 import SongAdmin from "./components/SongAdmin";
 import { Toast, ConfirmDialog } from "./components/Toast";
 
@@ -120,6 +122,76 @@ export default function App() {
     });
     showToast(`Saved as ${memberName}'s suggestion ✓`);
   }
+
+  // ── Voting ─────────────────────────────────────────────────────────────
+  const voting = activeShow?.voting || {};
+  const playedSongIds = activeShow?.playedSongIds || [];
+  const isShowMode = playedSongIds.length > 0 || voting.active;
+
+  function openVoting(timerSecs) {
+    updateShow(activeShow.id, {
+      voting: {
+        ...(activeShow.voting || {}),
+        active: true,
+        paused: false,
+        endsAt: Date.now() + timerSecs * 1000,
+        pausedRemaining: null,
+        timerSeconds: timerSecs,
+        songVotes: activeShow.voting?.songVotes || {},
+      }
+    });
+  }
+
+  function pauseVoting() {
+    const remaining = Math.max(0, voting.endsAt - Date.now());
+    updateShow(activeShow.id, {
+      voting: { ...voting, paused: true, endsAt: null, pausedRemaining: remaining },
+    });
+  }
+
+  function resumeVoting() {
+    const remaining = voting.pausedRemaining ?? 0;
+    updateShow(activeShow.id, {
+      voting: { ...voting, paused: false, endsAt: Date.now() + remaining, pausedRemaining: null },
+    });
+  }
+
+  function closeVoting() {
+    const votes = activeShow.voting?.songVotes || {};
+    const played = new Set(activeShow.playedSongIds || []);
+    const unplayed = activeShow.songIds.filter(id => !played.has(id));
+    unplayed.sort((a, b) => {
+      const va = votes[String(a)] || votes[a] || 0;
+      const vb = votes[String(b)] || votes[b] || 0;
+      if (vb !== va) return vb - va;
+      return activeShow.songIds.indexOf(a) - activeShow.songIds.indexOf(b);
+    });
+    const newSongIds = [...(activeShow.playedSongIds || []), ...unplayed];
+    updateShow(activeShow.id, {
+      songIds: newSongIds,
+      voting: { ...activeShow.voting, active: false, paused: false, endsAt: null, pausedRemaining: null },
+    });
+    showToast("Vote closed — setlist reordered ✓");
+  }
+
+  function markPlayed(songId) {
+    const newPlayed = [...(activeShow.playedSongIds || []), songId];
+    updateShow(activeShow.id, { playedSongIds: newPlayed });
+  }
+
+  function undoPlayed(songId) {
+    const newPlayed = (activeShow.playedSongIds || []).filter(id => id !== songId);
+    updateShow(activeShow.id, { playedSongIds: newPlayed });
+  }
+
+  // Auto-close voting when timer expires (skip when paused)
+  useEffect(() => {
+    if (!voting.active || !voting.endsAt || voting.paused) return;
+    const remaining = voting.endsAt - Date.now();
+    if (remaining <= 0) { closeVoting(); return; }
+    const t = setTimeout(closeVoting, remaining);
+    return () => clearTimeout(t);
+  }, [voting.active, voting.endsAt, voting.paused]);
 
   function loadSuggestion(suggestion) {
     showConfirm(`Load ${suggestion.member}'s set? This will replace the current set list.`, () => {
@@ -349,27 +421,40 @@ export default function App() {
                 display:"flex", justifyContent:"space-between", alignItems:"center",
               }}>
                 <span>Set List — {activeShow.songIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}</span>
-                <span style={{ color:"#555", fontSize:9 }}>drag to reorder</span>
+                {!isShowMode && <span style={{ color:"#555", fontSize:9 }}>drag to reorder</span>}
               </div>
+              <VotePanel show={activeShow} onOpen={openVoting} onClose={closeVoting} onPause={pauseVoting} onResume={resumeVoting} />
               <div style={{ flex:1, overflowY:"auto" }}>
-                <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} />
+                {isShowMode
+                  ? <ShowSetlist
+                      songIds={activeShow.songIds}
+                      playedSongIds={playedSongIds}
+                      voting={voting}
+                      songMap={songMap}
+                      onMarkPlayed={markPlayed}
+                      onUndoPlayed={undoPlayed}
+                    />
+                  : <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} />
+                }
               </div>
-              {/* Action footer */}
-              <div style={{
-                display:"flex", gap:8, padding:"10px 12px",
-                borderTop:"1px solid #1a1a30", background:"#0c0c1a", flexShrink:0,
-              }}>
-                <button onClick={saveSuggestion} style={{
-                  flex:1, padding:"10px", fontSize:12, fontFamily:"inherit",
-                  background:"transparent", border:"1px solid #1e3a48", color:"#5ecdc4",
-                  borderRadius:4, cursor:"pointer",
-                }}>Save as My Set</button>
-                <button onClick={() => setPrintShow(activeShow)} style={{
-                  flex:1, padding:"10px", fontSize:12, fontFamily:"inherit",
-                  background:"#f07272", border:"none", color:"#0d0d1c",
-                  borderRadius:4, cursor:"pointer", fontWeight:"bold",
-                }}>Export</button>
-              </div>
+              {/* Action footer — only in builder mode */}
+              {!isShowMode && (
+                <div style={{
+                  display:"flex", gap:8, padding:"10px 12px",
+                  borderTop:"1px solid #1a1a30", background:"#0c0c1a", flexShrink:0,
+                }}>
+                  <button onClick={saveSuggestion} style={{
+                    flex:1, padding:"10px", fontSize:12, fontFamily:"inherit",
+                    background:"transparent", border:"1px solid #1e3a48", color:"#5ecdc4",
+                    borderRadius:4, cursor:"pointer",
+                  }}>Save as My Set</button>
+                  <button onClick={() => setPrintShow(activeShow)} style={{
+                    flex:1, padding:"10px", fontSize:12, fontFamily:"inherit",
+                    background:"#f07272", border:"none", color:"#0d0d1c",
+                    borderRadius:4, cursor:"pointer", fontWeight:"bold",
+                  }}>Export</button>
+                </div>
+              )}
             </div>
           )}
 
@@ -526,10 +611,21 @@ export default function App() {
                 letterSpacing:"0.2em", textTransform:"uppercase",
                 borderBottom:"1px solid #1a1a30", flexShrink:0,
               }}>
-                Set List — {activeShow.songIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""} · drag to reorder
+                Set List — {activeShow.songIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}{!isShowMode && " · drag to reorder"}
               </div>
-              <div style={{ flex:1 }}>
-                <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} />
+              <VotePanel show={activeShow} onOpen={openVoting} onClose={closeVoting} onPause={pauseVoting} onResume={resumeVoting} />
+              <div style={{ flex:1, overflowY:"auto" }}>
+                {isShowMode
+                  ? <ShowSetlist
+                      songIds={activeShow.songIds}
+                      playedSongIds={playedSongIds}
+                      voting={voting}
+                      songMap={songMap}
+                      onMarkPlayed={markPlayed}
+                      onUndoPlayed={undoPlayed}
+                    />
+                  : <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} />
+                }
               </div>
             </>
           ) : (

@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import { SongsProvider } from "./context/SongsContext.jsx";
+import VotePage from "./components/VotePage.jsx";
 
 // Reset styles
 const style = document.createElement("style");
@@ -17,10 +18,16 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+const voteId = new URLSearchParams(window.location.search).get("vote");
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <SongsProvider>
-      <App />
-    </SongsProvider>
+    {voteId ? (
+      <VotePage showId={voteId} />
+    ) : (
+      <SongsProvider>
+        <App />
+      </SongsProvider>
+    )}
   </React.StrictMode>
 );
