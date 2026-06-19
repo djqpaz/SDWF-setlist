@@ -101,6 +101,14 @@ export default function App() {
     updateShow(activeShow.id, { songIds: ids });
   }
 
+  function loadChristmasSet() {
+    const ids = songs.filter(s => s.genre === "Christmas").map(s => s.id);
+    showConfirm(`Replace current set with all ${ids.length} Christmas songs?`, () => {
+      updateShow(activeShow.id, { songIds: ids });
+      if (isMobile) setMobileTab("setlist");
+      showToast("Christmas set loaded ✓");
+    });
+  }
 
   function addSong(songId) {
     if (!activeShow.songIds.includes(songId)) {
@@ -288,6 +296,12 @@ export default function App() {
             borderRadius:3, cursor:"pointer",
           }}>Generate Set</button>
 
+          <button onClick={loadChristmasSet} style={{
+            padding:"4px 10px", fontSize:11, fontFamily:"inherit",
+            background:"transparent", border:"1px solid #2a4a2a", color:"#6ecf6e",
+            borderRadius:3, cursor:"pointer",
+          }}>🎄 Christmas Set</button>
+
           <button onClick={() => setViewMode(v => v === "builder" ? "suggestions" : "builder")} style={{
             padding:"4px 10px", fontSize:11, fontFamily:"inherit",
             background: viewMode === "suggestions" ? "#18182c" : "transparent",
@@ -398,6 +412,14 @@ export default function App() {
                 fontWeight:"bold", letterSpacing:"0.05em",
               }}>
                 ✦ Generate Set
+              </button>
+              <button onClick={loadChristmasSet} style={{
+                margin:"0 12px 4px", padding:"10px",
+                background:"transparent", border:"1px solid #2a4a2a", color:"#6ecf6e",
+                borderRadius:4, cursor:"pointer", fontSize:13, fontFamily:"inherit",
+                fontWeight:"bold", letterSpacing:"0.05em",
+              }}>
+                🎄 Christmas Set
               </button>
               <div style={{
                 padding:"4px 16px 6px", fontSize:9, color:"#666",
