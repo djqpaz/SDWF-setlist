@@ -3,12 +3,11 @@ import { VIBE_COLORS } from "../data/songs";
 import { useSongs } from "../context/SongsContext";
 
 const SORT_MODES = [
-  { id: "title",      label: "A–Z"        },
-  { id: "bpm",        label: "BPM"        },
-  { id: "genre",      label: "Genre"      },
-  { id: "year",       label: "Year"       },
-  { id: "popularity", label: "Popular"    },
-  { id: "vibe",       label: "Arc"        },
+  { id: "title",      label: "A–Z"     },
+  { id: "bpm",        label: "BPM"     },
+  { id: "year",       label: "Year"    },
+  { id: "popularity", label: "Popular" },
+  { id: "vibe",       label: "Arc"     },
 ];
 
 const VIBE_ORDER = ["soulful","love","groove","nostalgia","tension","fun","joy","pride","swagger","uplift","singalong","anthemic","epic"];
@@ -18,7 +17,6 @@ function sortSongs(songs, mode, bpmDesc) {
   switch (mode) {
     case "title":      return s.sort((a,b) => a.title.localeCompare(b.title));
     case "bpm":        return s.sort((a,b) => bpmDesc ? b.bpm - a.bpm : a.bpm - b.bpm);
-    case "genre":      return s.sort((a,b) => a.genre.localeCompare(b.genre) || a.title.localeCompare(b.title));
     case "year":       return s.sort((a,b) => a.year - b.year);
     case "popularity": return s.sort((a,b) => b.popularity - a.popularity);
     case "vibe":       return s.sort((a,b) => VIBE_ORDER.indexOf(a.vibe) - VIBE_ORDER.indexOf(b.vibe));
@@ -26,26 +24,33 @@ function sortSongs(songs, mode, bpmDesc) {
   }
 }
 
-export default function SongLibrary({ setlistSongIds, onAdd }) {
+export default function SongLibrary({ setlistSongIds, onAdd, onAddAll }) {
   const { songs } = useSongs();
   const [sortMode, setSortMode] = useState("title");
   const [bpmDesc, setBpmDesc] = useState(false);
   const [search, setSearch] = useState("");
+  const [genreFilter, setGenreFilter] = useState(null);
+
+  const genres = useMemo(() => {
+    const g = [...new Set(songs.map(s => s.genre))].sort();
+    return g;
+  }, [songs]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    const pool = q
-      ? songs.filter(s => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q))
-      : songs;
+    let pool = songs;
+    if (genreFilter) pool = pool.filter(s => s.genre === genreFilter);
+    if (q) pool = pool.filter(s => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q));
     return sortSongs(pool, sortMode, bpmDesc);
-  }, [songs, sortMode, bpmDesc, search]);
+  }, [songs, sortMode, bpmDesc, search, genreFilter]);
 
   const inSet = new Set(setlistSongIds);
+  const addableCount = filtered.filter(s => !inSet.has(s.id)).length;
 
   return (
     <div style={{ display:"flex", flexDirection:"column", height:"100%", overflow:"hidden" }}>
       {/* Search */}
-      <div style={{ padding:"12px 16px 8px" }}>
+      <div style={{ padding:"12px 16px 6px" }}>
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -59,31 +64,56 @@ export default function SongLibrary({ setlistSongIds, onAdd }) {
         />
       </div>
 
-      {/* Sort bar */}
-      <div style={{ display:"flex", gap:4, padding:"0 16px 10px", flexWrap:"wrap", overflowX:"auto" }}>
+      {/* Genre chips */}
+      <div style={{
+        display:"flex", gap:4, padding:"0 16px 6px",
+        overflowX:"auto", flexShrink:0,
+        scrollbarWidth:"none",
+      }}>
+        <button onClick={() => setGenreFilter(null)} style={{
+          padding:"4px 10px", borderRadius:12, fontSize:11, cursor:"pointer",
+          fontFamily:"inherit", whiteSpace:"nowrap", flexShrink:0,
+          border: !genreFilter ? "1px solid #f07272" : "1px solid #282840",
+          background: !genreFilter ? "#2a1020" : "transparent",
+          color: !genreFilter ? "#f07272" : "#666",
+        }}>All</button>
+        {genres.map(g => (
+          <button key={g} onClick={() => setGenreFilter(f => f === g ? null : g)} style={{
+            padding:"4px 10px", borderRadius:12, fontSize:11, cursor:"pointer",
+            fontFamily:"inherit", whiteSpace:"nowrap", flexShrink:0,
+            border: genreFilter === g ? "1px solid #f07272" : "1px solid #282840",
+            background: genreFilter === g ? "#2a1020" : "transparent",
+            color: genreFilter === g ? "#f07272" : "#666",
+          }}>{g}</button>
+        ))}
+      </div>
+
+      {/* Sort bar + Add All */}
+      <div style={{ display:"flex", gap:4, padding:"0 16px 8px", flexWrap:"wrap", alignItems:"center" }}>
         {SORT_MODES.map(m => {
           const isBpm = m.id === "bpm";
           const active = sortMode === m.id;
           const label = isBpm && active ? (bpmDesc ? "BPM ↓" : "BPM ↑") : m.label;
           return (
             <button key={m.id} onClick={() => {
-              if (isBpm && active) {
-                setBpmDesc(d => !d);
-              } else {
-                setSortMode(m.id);
-                if (isBpm) setBpmDesc(false);
-              }
+              if (isBpm && active) setBpmDesc(d => !d);
+              else { setSortMode(m.id); if (isBpm) setBpmDesc(false); }
             }} style={{
-              padding:"5px 10px", borderRadius:3, fontSize:12, cursor:"pointer",
+              padding:"4px 10px", borderRadius:3, fontSize:11, cursor:"pointer",
               fontFamily:"inherit", letterSpacing:"0.05em", whiteSpace:"nowrap",
               border: active ? "1px solid #f07272" : "1px solid #282840",
               background: active ? "#2a1020" : "transparent",
               color: active ? "#f07272" : "#888",
-            }}>
-              {label}
-            </button>
+            }}>{label}</button>
           );
         })}
+        {onAddAll && addableCount > 0 && (
+          <button onClick={() => onAddAll(filtered.filter(s => !inSet.has(s.id)).map(s => s.id))} style={{
+            marginLeft:"auto", padding:"4px 10px", borderRadius:3, fontSize:11,
+            cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap",
+            border:"1px solid #2a4a2a", background:"transparent", color:"#6ecf6e",
+          }}>+ Add All ({addableCount})</button>
+        )}
       </div>
 
       {/* Song list */}

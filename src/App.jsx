@@ -101,13 +101,13 @@ export default function App() {
     updateShow(activeShow.id, { songIds: ids });
   }
 
-  function loadChristmasSet() {
-    const ids = songs.filter(s => s.genre === "Christmas").map(s => s.id);
-    showConfirm(`Replace current set with all ${ids.length} Christmas songs?`, () => {
-      updateShow(activeShow.id, { songIds: ids });
-      if (isMobile) setMobileTab("setlist");
-      showToast("Christmas set loaded ✓");
-    });
+  function addAllSongs(songIds) {
+    const existing = new Set(activeShow.songIds);
+    const toAdd = songIds.filter(id => !existing.has(id));
+    if (toAdd.length === 0) return;
+    updateShow(activeShow.id, { songIds: [...activeShow.songIds, ...toAdd] });
+    showToast(`Added ${toAdd.length} songs ✓`);
+    if (isMobile) setMobileTab("setlist");
   }
 
   function addSong(songId) {
@@ -296,11 +296,6 @@ export default function App() {
             borderRadius:3, cursor:"pointer",
           }}>Generate Set</button>
 
-          <button onClick={loadChristmasSet} style={{
-            padding:"4px 10px", fontSize:11, fontFamily:"inherit",
-            background:"transparent", border:"1px solid #2a4a2a", color:"#6ecf6e",
-            borderRadius:3, cursor:"pointer",
-          }}>🎄 Christmas Set</button>
 
           <button onClick={() => setViewMode(v => v === "builder" ? "suggestions" : "builder")} style={{
             padding:"4px 10px", fontSize:11, fontFamily:"inherit",
@@ -413,14 +408,6 @@ export default function App() {
               }}>
                 ✦ Generate Set
               </button>
-              <button onClick={loadChristmasSet} style={{
-                margin:"0 12px 4px", padding:"10px",
-                background:"transparent", border:"1px solid #2a4a2a", color:"#6ecf6e",
-                borderRadius:4, cursor:"pointer", fontSize:13, fontFamily:"inherit",
-                fontWeight:"bold", letterSpacing:"0.05em",
-              }}>
-                🎄 Christmas Set
-              </button>
               <div style={{
                 padding:"4px 16px 6px", fontSize:9, color:"#666",
                 letterSpacing:"0.2em", textTransform:"uppercase",
@@ -428,7 +415,7 @@ export default function App() {
                 Song Library — {activeShow.songIds.length} in set
               </div>
               <div style={{ flex:1, overflow:"hidden" }}>
-                <SongLibrary setlistSongIds={activeShow.songIds} onAdd={addSong} />
+                <SongLibrary setlistSongIds={activeShow.songIds} onAdd={addSong} onAddAll={addAllSongs} />
               </div>
             </div>
           )}
@@ -612,7 +599,7 @@ export default function App() {
             Song Library — {activeShow.songIds.length} in set
           </div>
           <div style={{ flex:1, overflow:"hidden", display:"flex", flexDirection:"column" }}>
-            <SongLibrary setlistSongIds={activeShow.songIds} onAdd={addSong} />
+            <SongLibrary setlistSongIds={activeShow.songIds} onAdd={addSong} onAddAll={addAllSongs} />
           </div>
         </div>
 
