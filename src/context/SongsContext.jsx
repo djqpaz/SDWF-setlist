@@ -20,6 +20,16 @@ export function SongsProvider({ children }) {
         return;
       }
 
+      // Seed any songs in the local list not yet in Firestore
+      const existingIds = new Set(snapshot.docs.map(d => d.id));
+      const missingSongs = SONGS.filter(s => !existingIds.has(String(s.id)));
+      if (missingSongs.length > 0) {
+        const batch = writeBatch(db);
+        missingSongs.forEach(s => batch.set(doc(db, "songs", String(s.id)), s));
+        await batch.commit();
+        return;
+      }
+
       // Migrate any songs missing key or duration
       const needsUpdate = snapshot.docs.filter(d => {
         const data = d.data();

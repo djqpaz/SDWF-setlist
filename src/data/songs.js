@@ -50,23 +50,23 @@ export const SONGS = [
   { id: 48, title: "Another Brick in the Wall",  artist: "Pink Floyd",                 bpm: 104, genre: "Classic Rock",     year: 1979, popularity: 90, vibe: "tension",   key: "Dm", duration: 222 },
 
   // --- Christmas Show ---
-  { id: 49, title: "It's the Most Wonderful Time of the Year", artist: "Andy Williams",   bpm: 130, genre: "Christmas",        year: 1963, popularity: 88, vibe: "uplift",    key: "C",  duration: 155 },
+  { id: 49, title: "It's the Most Wonderful Time of the Year", artist: "Andy Williams",   bpm: 130, genre: "Christmas",        year: 1963, popularity: 88, vibe: "uplift",    key: "C",  duration: 155, note: "Rock version" },
   { id: 50, title: "Last Christmas",                           artist: "Wham!",            bpm: 108, genre: "Christmas",        year: 1984, popularity: 92, vibe: "nostalgia", key: "A",  duration: 258 },
   { id: 51, title: "Do They Know It's Christmas?",             artist: "Band Aid",         bpm: 113, genre: "Christmas",        year: 1984, popularity: 80, vibe: "anthemic",  key: "G",  duration: 217 },
   { id: 52, title: "Wonderful Christmastime",                  artist: "Paul McCartney",   bpm: 120, genre: "Christmas",        year: 1979, popularity: 85, vibe: "joy",       key: "A",  duration: 203 },
   { id: 53, title: "The Christmas Song",                       artist: "Nat King Cole",    bpm: 80,  genre: "Christmas",        year: 1946, popularity: 90, vibe: "soulful",   key: "Bb", duration: 207 },
-  { id: 54, title: "The Little Drummer Boy",                   artist: "Traditional",      bpm: 100, genre: "Christmas",        year: 1958, popularity: 84, vibe: "epic",      key: "G",  duration: 210 },
+  { id: 54, title: "The Little Drummer Boy",                   artist: "Traditional",      bpm: 100, genre: "Christmas",        year: 1958, popularity: 84, vibe: "epic",      key: "G",  duration: 210, note: "Matt — extended drum solo, middle of song" },
   { id: 55, title: "O Holy Night",                             artist: "Traditional",      bpm: 70,  genre: "Christmas",        year: 1847, popularity: 88, vibe: "epic",      key: "C",  duration: 240 },
   { id: 56, title: "Angels We Have Heard on High",             artist: "Traditional",      bpm: 90,  genre: "Christmas",        year: 1862, popularity: 78, vibe: "uplift",    key: "G",  duration: 150 },
   { id: 57, title: "Silent Night",                             artist: "Traditional",      bpm: 64,  genre: "Christmas",        year: 1818, popularity: 90, vibe: "soulful",   key: "C",  duration: 210 },
-  { id: 58, title: "Christmas Medley",                         artist: "Various",          bpm: 140, genre: "Christmas",        year: 1958, popularity: 86, vibe: "fun",       key: "G",  duration: 240 },
-  { id: 59, title: "I Saw Three Ships",                        artist: "Traditional",      bpm: 150, genre: "Christmas",        year: 1666, popularity: 70, vibe: "joy",       key: "D",  duration: 150 },
+  { id: 58, title: "Christmas Medley",                         artist: "Various",          bpm: 140, genre: "Christmas",        year: 1958, popularity: 86, vibe: "fun",       key: "G",  duration: 240, note: "Run Run Rudolph / Rudolph the Red-Nosed Reindeer / Santa Claus Is Coming to Town" },
+  { id: 59, title: "I Saw Three Ships",                        artist: "Traditional",      bpm: 150, genre: "Christmas",        year: 1666, popularity: 70, vibe: "joy",       key: "D",  duration: 150, note: "Rock arrangement" },
   { id: 60, title: "Feliz Navidad",                            artist: "José Feliciano",   bpm: 150, genre: "Christmas",        year: 1970, popularity: 91, vibe: "singalong", key: "D",  duration: 196 },
   { id: 61, title: "Happy Xmas (War Is Over)",                 artist: "John Lennon",      bpm: 146, genre: "Christmas",        year: 1971, popularity: 85, vibe: "anthemic",  key: "G",  duration: 231 },
   { id: 62, title: "Christmas (Baby Please Come Home)",        artist: "Darlene Love",     bpm: 130, genre: "Christmas",        year: 1963, popularity: 87, vibe: "soulful",   key: "E",  duration: 195 },
   { id: 63, title: "Jingle Bells",                             artist: "Traditional",      bpm: 120, genre: "Christmas",        year: 1857, popularity: 88, vibe: "singalong", key: "G",  duration: 120 },
   { id: 64, title: "We Wish You a Merry Christmas",            artist: "Traditional",      bpm: 140, genre: "Christmas",        year: 1935, popularity: 82, vibe: "singalong", key: "G",  duration: 90  },
-  { id: 65, title: "Silent Night / Away in a Manger",         artist: "Relient K",        bpm: 80,  genre: "Christmas",        year: 2007, popularity: 72, vibe: "soulful",   key: "G",  duration: 200 },
+  { id: 65, title: "Silent Night / Away in a Manger",         artist: "Relient K",        bpm: 80,  genre: "Christmas",        year: 2007, popularity: 72, vibe: "soulful",   key: "G",  duration: 200, note: "Relient K arrangement" },
 ];
 
 export const BAND_MEMBERS = ["Matt", "Kenny", "Spencer", "Chris", "John", "Dave", "Patrick"];
