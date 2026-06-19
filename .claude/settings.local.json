@@ -11,7 +11,10 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git commit -m 'Fix mobile viewport clipping on real devices *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git -C /Users/Patrick/ReactProjects/sickday-setlist remote get-url origin)",
+      "Bash(git -C /Users/Patrick/ReactProjects/sickday-setlist status)",
+      "Bash(git -C /Users/Patrick/ReactProjects/sickday-setlist diff)"
     ]
   }
 }

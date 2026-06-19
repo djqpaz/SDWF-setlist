@@ -12,7 +12,15 @@ export default function ShowSetlist({ songIds, playedSongIds, voting, songMap, o
 
   // Sort unplayed by vote count for display (reflects how reorder will happen)
   const played = (playedSongIds || []).filter(id => songMap[id]);
-  const remaining = songIds.filter(id => !playedSet.has(id) && songMap[id]);
+  const remaining = songIds
+    .filter(id => !playedSet.has(id) && songMap[id])
+    .sort((a, b) => {
+      if (!votingActive) return 0; // preserve order when not voting
+      const va = votes[String(a)] || votes[a] || 0;
+      const vb = votes[String(b)] || votes[b] || 0;
+      if (vb !== va) return vb - va;
+      return songIds.indexOf(a) - songIds.indexOf(b); // tie-break: original order
+    });
 
   return (
     <div style={{ padding: "8px 12px 16px" }}>
