@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "./firebase";
+import { colors } from "./theme";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { BAND_MEMBERS } from "./data/songs";
 import { useSongs } from "./context/SongsContext";
@@ -221,9 +222,9 @@ export default function App() {
 
   if (loading) return (
     <div style={{
-      height:"100dvh", background:"#0d0d1c", display:"flex",
+      height:"100dvh", background: colors.bgPage, display:"flex",
       alignItems:"center", justifyContent:"center",
-      color:"#5ecdc4", fontFamily:"'Georgia', serif", fontSize:14, letterSpacing:"0.1em",
+      color:colors.teal, fontFamily:"'Georgia', serif", fontSize:14, letterSpacing:"0.1em",
     }}>
       Loading…
     </div>
@@ -236,7 +237,7 @@ export default function App() {
   const metaBar = (
     <div style={{
       display:"flex", alignItems:"center", gap:8, padding:"8px 16px",
-      borderBottom:"1px solid #1a1a30", background:"#0c0c1a", flexShrink:0,
+      borderBottom:`1px solid ${colors.borderLight}`, background:colors.bgPanel, flexShrink:0,
       flexWrap:"wrap",
     }}>
       {editingName ? (
@@ -247,7 +248,7 @@ export default function App() {
           onBlur={() => setEditingName(false)}
           onKeyDown={e => e.key === "Enter" && setEditingName(false)}
           style={{
-            background:"#18182c", border:"1px solid #f07272", color:"#e0dcd0",
+            background:colors.bgInput, border:`1px solid ${colors.coral}`, color:colors.textPrimary,
             padding:"4px 8px", borderRadius:3, fontSize:14, fontFamily:"inherit",
             outline:"none", flex:1, minWidth:120,
           }}
@@ -255,11 +256,11 @@ export default function App() {
       ) : (
         <div
           onClick={() => setEditingName(true)}
-          style={{ fontSize:14, color:"#e0dcd0", cursor:"text", padding:"4px 0", flex:1, minWidth:0,
+          style={{ fontSize:14, color:colors.textPrimary, cursor:"text", padding:"4px 0", flex:1, minWidth:0,
             whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}
           title="Click to rename"
         >
-          {activeShow.name} <span style={{ color:"#666", fontSize:11 }}>✎</span>
+          {activeShow.name} <span style={{ color:colors.textDim, fontSize:11 }}>✎</span>
         </div>
       )}
 
@@ -269,7 +270,7 @@ export default function App() {
         placeholder="Date"
         type="date"
         style={{
-          background:"#18182c", border:"1px solid #1e1e36", color:"#888",
+          background:colors.bgInput, border:`1px solid ${colors.borderMed}`, color:colors.textMuted,
           padding:"4px 8px", borderRadius:3, fontSize:12, fontFamily:"inherit",
           outline:"none",
         }}
@@ -280,7 +281,7 @@ export default function App() {
         onChange={e => updateShow(activeShow.id, { venue: e.target.value })}
         placeholder="Venue"
         style={{
-          background:"#18182c", border:"1px solid #1e1e36", color:"#888",
+          background:colors.bgInput, border:`1px solid ${colors.borderMed}`, color:colors.textMuted,
           padding:"4px 8px", borderRadius:3, fontSize:12, fontFamily:"inherit",
           outline:"none", width:130,
         }}
@@ -288,19 +289,19 @@ export default function App() {
 
       {!isMobile && (
         <div style={{ marginLeft:"auto", display:"flex", gap:6, alignItems:"center" }}>
-          <span style={{ fontSize:11, color:"#888" }}>{activeShow.songIds.length} songs</span>
+          <span style={{ fontSize:11, color:colors.textMuted }}>{activeShow.songIds.length} songs</span>
 
           <button onClick={() => setShowGenerate(true)} style={{
             padding:"4px 10px", fontSize:11, fontFamily:"inherit",
-            background:"transparent", border:"1px solid #2a4040", color:"#5ecdc4",
+            background:"transparent", border:`1px solid ${colors.borderTeal}`, color:colors.teal,
             borderRadius:3, cursor:"pointer",
           }}>Generate Set</button>
 
 
           <button onClick={() => setViewMode(v => v === "builder" ? "suggestions" : "builder")} style={{
             padding:"4px 10px", fontSize:11, fontFamily:"inherit",
-            background: viewMode === "suggestions" ? "#18182c" : "transparent",
-            border:"1px solid #282840", color: viewMode === "suggestions" ? "#f07272" : "#666",
+            background: viewMode === "suggestions" ? colors.bgInput : "transparent",
+            border:`1px solid ${colors.borderMed}`, color: viewMode === "suggestions" ? colors.coral : colors.textDim,
             borderRadius:3, cursor:"pointer",
           }}>
             Suggestions {activeShow.suggestions?.length > 0 && `(${activeShow.suggestions.length})`}
@@ -308,19 +309,19 @@ export default function App() {
 
           <button onClick={saveSuggestion} style={{
             padding:"4px 10px", fontSize:11, fontFamily:"inherit",
-            background:"transparent", border:"1px solid #1e3a48", color:"#5ecdc4",
+            background:"transparent", border:`1px solid ${colors.borderTeal}`, color:colors.teal,
             borderRadius:3, cursor:"pointer",
           }}>Save as My Set</button>
 
           <button onClick={() => setPrintShow(activeShow)} style={{
             padding:"4px 10px", fontSize:11, fontFamily:"inherit",
-            background:"#f07272", border:"none", color:"#0d0d1c",
+            background:colors.coral, border:"none", color: colors.onAccent,
             borderRadius:3, cursor:"pointer", fontWeight:"bold",
           }}>Export</button>
 
           <button onClick={() => deleteShow(activeShow.id)} style={{
             padding:"4px 8px", fontSize:11,
-            background:"transparent", border:"1px solid #3a2020", color:"#906060",
+            background:"transparent", border:`1px solid ${colors.borderRed}`, color:colors.danger,
             borderRadius:3, cursor:"pointer", fontFamily:"inherit",
           }}>Delete Show</button>
         </div>
@@ -336,17 +337,17 @@ export default function App() {
     return (
       <div style={{
         display:"flex", flexDirection:"column", height:"100dvh",
-        background:"#0d0d1c", color:"#e0dcd0",
+        background: colors.bgPage, color:colors.textPrimary,
         fontFamily:"'Georgia', serif", overflow:"hidden",
       }}>
         {/* Top bar */}
         <div style={{
           display:"flex", alignItems:"center", gap:8,
           padding:"0 12px", height:48,
-          borderBottom:"1px solid #1e1e36", flexShrink:0,
-          background:"#09091a",
+          borderBottom:`1px solid ${colors.borderMed}`, flexShrink:0,
+          background:colors.bgHeader,
         }}>
-          <div style={{ fontSize:12, color:"#f07272", fontWeight:"bold", letterSpacing:"0.1em" }}>
+          <div style={{ fontSize:12, color:colors.coral, fontWeight:"bold", letterSpacing:"0.1em" }}>
             SDWF
           </div>
 
@@ -356,17 +357,17 @@ export default function App() {
               <button key={show.id} onClick={() => setActiveShowId(show.id)} style={{
                 padding:"4px 10px", borderRadius:"3px 3px 0 0", fontSize:11,
                 border:"1px solid",
-                borderBottom: activeShowId === show.id ? "1px solid #09091a" : "1px solid #1e1e36",
-                borderColor: activeShowId === show.id ? "#282840 #282840 #09091a #282840" : "#1e1e36",
-                background: activeShowId === show.id ? "#09091a" : "transparent",
-                color: activeShowId === show.id ? "#e0dcd0" : "#555",
+                borderBottom: activeShowId === show.id ? `1px solid ${colors.bgHeader}` : `1px solid ${colors.borderMed}`,
+                borderColor: activeShowId === show.id ? `${colors.borderMed} ${colors.borderMed} ${colors.bgHeader} ${colors.borderMed}` : colors.borderMed,
+                background: activeShowId === show.id ? colors.bgHeader : "transparent",
+                color: activeShowId === show.id ? colors.textPrimary : colors.textFaint,
                 cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap",
               }}>{show.name}</button>
             ))}
             <button onClick={addShow} style={{
               padding:"4px 8px", background:"transparent",
-              border:"1px solid #1e1e36", borderBottom:"1px solid #1e1e36",
-              color:"#777", cursor:"pointer", fontSize:16, borderRadius:"3px 3px 0 0", lineHeight:1,
+              border:`1px solid ${colors.borderMed}`, borderBottom:`1px solid ${colors.borderMed}`,
+              color:colors.textDim, cursor:"pointer", fontSize:16, borderRadius:"3px 3px 0 0", lineHeight:1,
             }}>+</button>
           </div>
 
@@ -374,8 +375,8 @@ export default function App() {
             value={memberName}
             onChange={e => setMemberName(e.target.value)}
             style={{
-              background:"#18182c", border:"1px solid #282840",
-              color: memberName ? "#f07272" : "#555",
+              background:colors.bgInput, border:`1px solid ${colors.borderMed}`,
+              color: memberName ? colors.coral : colors.textFaint,
               padding:"4px 6px", borderRadius:3, fontSize:11, fontFamily:"inherit",
               cursor:"pointer", outline:"none", maxWidth:100,
             }}
@@ -385,7 +386,7 @@ export default function App() {
           </select>
 
           <button onClick={() => setShowAdmin(true)} style={{
-            background:"transparent", border:"1px solid #2a4040", color:"#5ecdc4",
+            background:"transparent", border:`1px solid ${colors.borderTeal}`, color:colors.teal,
             borderRadius:3, padding:"4px 8px", fontSize:13, cursor:"pointer", fontFamily:"inherit",
           }}>⚙</button>
         </div>
@@ -402,14 +403,14 @@ export default function App() {
               {/* Generate Set button */}
               <button onClick={() => setShowGenerate(true)} style={{
                 margin:"10px 12px 4px", padding:"10px",
-                background:"transparent", border:"1px solid #2a4040", color:"#5ecdc4",
+                background:"transparent", border:`1px solid ${colors.borderTeal}`, color:colors.teal,
                 borderRadius:4, cursor:"pointer", fontSize:13, fontFamily:"inherit",
                 fontWeight:"bold", letterSpacing:"0.05em",
               }}>
                 ✦ Generate Set
               </button>
               <div style={{
-                padding:"4px 16px 6px", fontSize:9, color:"#666",
+                padding:"4px 16px 6px", fontSize:9, color:colors.textDim,
                 letterSpacing:"0.2em", textTransform:"uppercase",
               }}>
                 Song Library — {activeShow.songIds.length} in set
@@ -424,13 +425,13 @@ export default function App() {
           {mobileTab === "setlist" && (
             <div style={{ flex:1, overflow:"hidden", display:"flex", flexDirection:"column" }}>
               <div style={{
-                padding:"10px 16px 6px", fontSize:9, color:"#666",
+                padding:"10px 16px 6px", fontSize:9, color:colors.textDim,
                 letterSpacing:"0.2em", textTransform:"uppercase", flexShrink:0,
-                borderBottom:"1px solid #1a1a30",
+                borderBottom:`1px solid ${colors.borderLight}`,
                 display:"flex", justifyContent:"space-between", alignItems:"center",
               }}>
                 <span>Set List — {activeShow.songIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}</span>
-                {!isShowMode && <span style={{ color:"#555", fontSize:9 }}>drag to reorder</span>}
+                {!isShowMode && <span style={{ color:colors.textFaint, fontSize:9 }}>drag to reorder</span>}
               </div>
               <VotePanel show={activeShow} onOpen={openVoting} onClose={closeVoting} onPause={pauseVoting} onResume={resumeVoting} />
               <div style={{ flex:1, overflowY:"auto" }}>
@@ -450,16 +451,16 @@ export default function App() {
               {!isShowMode && (
                 <div style={{
                   display:"flex", gap:8, padding:"10px 12px",
-                  borderTop:"1px solid #1a1a30", background:"#0c0c1a", flexShrink:0,
+                  borderTop:`1px solid ${colors.borderLight}`, background:colors.bgPanel, flexShrink:0,
                 }}>
                   <button onClick={saveSuggestion} style={{
                     flex:1, padding:"10px", fontSize:12, fontFamily:"inherit",
-                    background:"transparent", border:"1px solid #1e3a48", color:"#5ecdc4",
+                    background:"transparent", border:`1px solid ${colors.borderTeal}`, color:colors.teal,
                     borderRadius:4, cursor:"pointer",
                   }}>Save as My Set</button>
                   <button onClick={() => setPrintShow(activeShow)} style={{
                     flex:1, padding:"10px", fontSize:12, fontFamily:"inherit",
-                    background:"#f07272", border:"none", color:"#0d0d1c",
+                    background:colors.coral, border:"none", color: colors.onAccent,
                     borderRadius:4, cursor:"pointer", fontWeight:"bold",
                   }}>Export</button>
                 </div>
@@ -480,8 +481,8 @@ export default function App() {
 
         {/* Bottom tab bar */}
         <div style={{
-          display:"flex", borderTop:"1px solid #1e1e36",
-          background:"#09091a", flexShrink:0,
+          display:"flex", borderTop:`1px solid ${colors.borderMed}`,
+          background:colors.bgHeader, flexShrink:0,
           paddingBottom:"env(safe-area-inset-bottom, 0px)",
         }}>
           {[
@@ -491,10 +492,10 @@ export default function App() {
           ].map(tab => (
             <button key={tab.id} onClick={() => setMobileTab(tab.id)} style={{
               flex:1, padding:"12px 4px", border:"none",
-              background: mobileTab === tab.id ? "#18182c" : "transparent",
-              color: mobileTab === tab.id ? "#f07272" : "#666",
+              background: mobileTab === tab.id ? colors.bgInput : "transparent",
+              color: mobileTab === tab.id ? colors.coral : colors.textDim,
               fontFamily:"inherit", fontSize:11, cursor:"pointer",
-              borderTop: mobileTab === tab.id ? "2px solid #f07272" : "2px solid transparent",
+              borderTop: mobileTab === tab.id ? `2px solid ${colors.coral}` : "2px solid transparent",
             }}>{tab.label}</button>
           ))}
         </div>
@@ -525,17 +526,17 @@ export default function App() {
   return (
     <div style={{
       display:"flex", flexDirection:"column", height:"100vh",
-      background:"#0d0d1c", color:"#e0dcd0",
+      background: colors.bgPage, color:colors.textPrimary,
       fontFamily:"'Georgia', serif", overflow:"hidden",
     }}>
       {/* Top bar */}
       <div style={{
         display:"flex", alignItems:"center", gap:12,
         padding:"0 16px", height:52,
-        borderBottom:"1px solid #1e1e36", flexShrink:0,
-        background:"#09091a",
+        borderBottom:`1px solid ${colors.borderMed}`, flexShrink:0,
+        background:colors.bgHeader,
       }}>
-        <div style={{ fontSize:12, color:"#f07272", fontWeight:"bold", letterSpacing:"0.1em", marginRight:4 }}>
+        <div style={{ fontSize:12, color:colors.coral, fontWeight:"bold", letterSpacing:"0.1em", marginRight:4 }}>
           SDWF
         </div>
 
@@ -544,17 +545,17 @@ export default function App() {
             <button key={show.id} onClick={() => setActiveShowId(show.id)} style={{
               padding:"5px 12px", borderRadius:"3px 3px 0 0", fontSize:12,
               border:"1px solid",
-              borderBottom: activeShowId === show.id ? "1px solid #09091a" : "1px solid #1e1e36",
-              borderColor: activeShowId === show.id ? "#282840 #282840 #09091a #282840" : "#1e1e36",
-              background: activeShowId === show.id ? "#09091a" : "transparent",
-              color: activeShowId === show.id ? "#e0dcd0" : "#555",
+              borderBottom: activeShowId === show.id ? `1px solid ${colors.bgHeader}` : `1px solid ${colors.borderMed}`,
+              borderColor: activeShowId === show.id ? `${colors.borderMed} ${colors.borderMed} ${colors.bgHeader} ${colors.borderMed}` : colors.borderMed,
+              background: activeShowId === show.id ? colors.bgHeader : "transparent",
+              color: activeShowId === show.id ? colors.textPrimary : colors.textFaint,
               cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap",
             }}>{show.name}</button>
           ))}
           <button onClick={addShow} style={{
             padding:"5px 10px", background:"transparent",
-            border:"1px solid #1e1e36", borderBottom:"1px solid #1e1e36",
-            color:"#777", cursor:"pointer", fontSize:16, borderRadius:"3px 3px 0 0", lineHeight:1,
+            border:`1px solid ${colors.borderMed}`, borderBottom:`1px solid ${colors.borderMed}`,
+            color:colors.textDim, cursor:"pointer", fontSize:16, borderRadius:"3px 3px 0 0", lineHeight:1,
           }}>+</button>
         </div>
 
@@ -562,7 +563,7 @@ export default function App() {
           value={memberName}
           onChange={e => setMemberName(e.target.value)}
           style={{
-            background:"#18182c", border:"1px solid #282840", color: memberName ? "#f07272" : "#555",
+            background:colors.bgInput, border:`1px solid ${colors.borderMed}`, color: memberName ? colors.coral : colors.textFaint,
             padding:"4px 8px", borderRadius:3, fontSize:12, fontFamily:"inherit",
             cursor:"pointer", outline:"none",
           }}
@@ -573,7 +574,7 @@ export default function App() {
 
         <button onClick={() => setShowAdmin(true)} style={{
           padding:"4px 10px", fontSize:13, fontFamily:"inherit",
-          background:"transparent", border:"1px solid #2a4040", color:"#5ecdc4",
+          background:"transparent", border:`1px solid ${colors.borderTeal}`, color:colors.teal,
           borderRadius:3, cursor:"pointer",
         }}>⚙ Songs</button>
       </div>
@@ -586,15 +587,15 @@ export default function App() {
         <div style={{
           width: sidebarOpen ? 280 : 0,
           minWidth: sidebarOpen ? 280 : 0,
-          borderRight:"1px solid #1a1a30",
+          borderRight:`1px solid ${colors.borderLight}`,
           display:"flex", flexDirection:"column",
           overflow:"hidden", transition:"width 0.2s, min-width 0.2s",
-          background:"#0c0c1a",
+          background:colors.bgPanel,
         }}>
           <div style={{
-            padding:"10px 16px 6px", fontSize:10, color:"#777",
+            padding:"10px 16px 6px", fontSize:10, color:colors.textDim,
             letterSpacing:"0.2em", textTransform:"uppercase", flexShrink:0,
-            borderBottom:"1px solid #1a1a30",
+            borderBottom:`1px solid ${colors.borderLight}`,
           }}>
             Song Library — {activeShow.songIds.length} in set
           </div>
@@ -604,8 +605,8 @@ export default function App() {
         </div>
 
         <button onClick={() => setSidebarOpen(o => !o)} style={{
-          width:20, background:"#0c0c1a", border:"none",
-          borderRight:"1px solid #1a1a30", color:"#666",
+          width:20, background:colors.bgPanel, border:"none",
+          borderRight:`1px solid ${colors.borderLight}`, color:colors.textDim,
           cursor:"pointer", fontSize:12, flexShrink:0,
           display:"flex", alignItems:"center", justifyContent:"center",
         }}>
@@ -616,9 +617,9 @@ export default function App() {
           {viewMode === "builder" ? (
             <>
               <div style={{
-                padding:"10px 16px 6px", fontSize:10, color:"#777",
+                padding:"10px 16px 6px", fontSize:10, color:colors.textDim,
                 letterSpacing:"0.2em", textTransform:"uppercase",
-                borderBottom:"1px solid #1a1a30", flexShrink:0,
+                borderBottom:`1px solid ${colors.borderLight}`, flexShrink:0,
               }}>
                 Set List — {activeShow.songIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}{!isShowMode && " · drag to reorder"}
               </div>
@@ -669,7 +670,7 @@ function SuggestionsPanel({ suggestions, onLoad }) {
     return (
       <div style={{
         flex:1, display:"flex", alignItems:"center", justifyContent:"center",
-        color:"#777", fontSize:13, fontStyle:"italic", padding:24, textAlign:"center",
+        color:colors.textDim, fontSize:13, fontStyle:"italic", padding:24, textAlign:"center",
       }}>
         No suggestions yet — band members can save their own set via "Save as My Set"
       </div>
@@ -678,25 +679,25 @@ function SuggestionsPanel({ suggestions, onLoad }) {
 
   return (
     <div style={{ padding:16 }}>
-      <div style={{ fontSize:10, color:"#777", letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:16 }}>
+      <div style={{ fontSize:10, color:colors.textDim, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:16 }}>
         Band Suggestions
       </div>
       <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
         {suggestions.map((s, i) => (
           <div key={i} style={{
-            background:"#141428", border:"1px solid #1e1e36",
+            background:colors.bgCard, border:`1px solid ${colors.borderMed}`,
             borderRadius:4, padding:14,
           }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
               <div>
-                <div style={{ fontSize:14, color:"#f07272" }}>{s.member}</div>
-                <div style={{ fontSize:10, color:"#888", marginTop:2 }}>
+                <div style={{ fontSize:14, color:colors.coral }}>{s.member}</div>
+                <div style={{ fontSize:10, color:colors.textMuted, marginTop:2 }}>
                   {s.songIds.length} songs · saved {new Date(s.savedAt).toLocaleDateString()}
                 </div>
               </div>
               <button onClick={() => onLoad(s)} style={{
                 padding:"5px 12px", background:"transparent",
-                border:"1px solid #2a4040", color:"#5ecdc4",
+                border:`1px solid ${colors.borderTeal}`, color:colors.teal,
                 borderRadius:3, cursor:"pointer", fontSize:11, fontFamily:"inherit",
               }}>Load This Set</button>
             </div>
@@ -716,13 +717,13 @@ function SuggestionSongListInner({ songIds }) {
   return (
     <div>
       {preview.map((id, i) => (
-        <div key={id} style={{ fontSize:12, color:"#888", display:"flex", gap:8, marginBottom:2 }}>
-          <span style={{ color:"#666", minWidth:20, textAlign:"right" }}>{i+1}.</span>
+        <div key={id} style={{ fontSize:12, color:colors.textMuted, display:"flex", gap:8, marginBottom:2 }}>
+          <span style={{ color:colors.textDim, minWidth:20, textAlign:"right" }}>{i+1}.</span>
           <span>{songMap[id]?.title || "Unknown"}</span>
         </div>
       ))}
       {rest > 0 && (
-        <div style={{ fontSize:11, color:"#666", marginTop:4, fontStyle:"italic" }}>
+        <div style={{ fontSize:11, color:colors.textDim, marginTop:4, fontStyle:"italic" }}>
           + {rest} more songs…
         </div>
       )}

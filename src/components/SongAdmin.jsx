@@ -4,6 +4,7 @@ import { doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useSongs } from "../context/SongsContext";
 import { VIBE_COLORS } from "../data/songs";
+import { colors } from "../theme";
 
 const VIBES = ["anthemic","epic","fun","groove","joy","love","nostalgia","pride","singalong","soulful","swagger","tension","uplift"];
 
@@ -23,14 +24,14 @@ function fmtDuration(secs) {
 
 function Field({ label, value, onChange, type = "text", options }) {
   const inputStyle = {
-    width:"100%", background:"#18182c", border:"1px solid #2a2a50",
-    color:"#e0dcd0", padding:"6px 8px", borderRadius:3,
+    width:"100%", background:colors.bgInput, border:`1px solid ${colors.borderMed}`,
+    color:colors.textPrimary, padding:"6px 8px", borderRadius:3,
     fontSize:12, fontFamily:"'Georgia', serif", outline:"none",
     boxSizing:"border-box",
   };
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-      <label style={{ fontSize:10, color:"#888", letterSpacing:"0.1em", textTransform:"uppercase" }}>{label}</label>
+      <label style={{ fontSize:10, color:colors.textMuted, letterSpacing:"0.1em", textTransform:"uppercase" }}>{label}</label>
       {options ? (
         <select value={value} onChange={e => onChange(e.target.value)} style={{ ...inputStyle, cursor:"pointer" }}>
           {options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -59,7 +60,7 @@ function SongForm({ initial, onSave, onCancel, saving }) {
 
   return (
     <div style={{
-      background:"#0c0c1a", border:"1px solid #2a2a50", borderRadius:6,
+      background:colors.bgPanel, border:`1px solid ${colors.borderMed}`, borderRadius:6,
       padding:16, display:"flex", flexDirection:"column", gap:12,
     }}>
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
@@ -74,15 +75,15 @@ function SongForm({ initial, onSave, onCancel, saving }) {
         <Field label="Popularity (1–100)" value={form.popularity} onChange={set("popularity")} type="number" />
       </div>
       <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-        <label style={{ fontSize:10, color:"#888", letterSpacing:"0.1em", textTransform:"uppercase" }}>Sound Notes</label>
+        <label style={{ fontSize:10, color:colors.textMuted, letterSpacing:"0.1em", textTransform:"uppercase" }}>Sound Notes</label>
         <textarea
           value={form.note || ""}
           onChange={e => set("note")(e.target.value)}
           placeholder="Key, cues, EQ notes, tempo changes…"
           rows={3}
           style={{
-            width:"100%", background:"#18182c", border:"1px solid #2a2a50",
-            color:"#e0dcd0", padding:"6px 8px", borderRadius:3,
+            width:"100%", background:colors.bgInput, border:`1px solid ${colors.borderMed}`,
+            color:colors.textPrimary, padding:"6px 8px", borderRadius:3,
             fontSize:13, fontFamily:"'Georgia', serif", outline:"none",
             boxSizing:"border-box", resize:"vertical", lineHeight:1.5,
           }}
@@ -90,12 +91,12 @@ function SongForm({ initial, onSave, onCancel, saving }) {
       </div>
       <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
         <button onClick={onCancel} style={{
-          padding:"7px 14px", background:"transparent", border:"1px solid #282840",
-          color:"#888", borderRadius:3, cursor:"pointer", fontSize:12, fontFamily:"inherit",
+          padding:"7px 14px", background:"transparent", border:`1px solid ${colors.borderMed}`,
+          color:colors.textMuted, borderRadius:3, cursor:"pointer", fontSize:12, fontFamily:"inherit",
         }}>Cancel</button>
         <button onClick={handleSave} disabled={saving} style={{
-          padding:"7px 14px", background:"#f07272", border:"none",
-          color:"#0d0d1c", borderRadius:3, cursor:"pointer", fontSize:12,
+          padding:"7px 14px", background:colors.coral, border:"none",
+          color: colors.onAccent, borderRadius:3, cursor:"pointer", fontSize:12,
           fontFamily:"inherit", fontWeight:"bold", opacity: saving ? 0.6 : 1,
         }}>{saving ? "Saving…" : "Save Song"}</button>
       </div>
@@ -145,28 +146,28 @@ export default function SongAdmin({ onClose }) {
       fontFamily:"'Georgia', serif",
     }}>
       <div style={{
-        background:"#0d0d1c", width:"min(720px, 100vw)", display:"flex",
+        background: colors.bgPage, width:"min(720px, 100vw)", display:"flex",
         flexDirection:"column", height:"100%",
       }}>
         {/* Header */}
         <div style={{
-          padding:"14px 20px", borderBottom:"1px solid #1e1e36",
+          padding:"14px 20px", borderBottom:`1px solid ${colors.borderMed}`,
           display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0,
         }}>
           <div>
-            <div style={{ fontSize:11, color:"#888", letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:2 }}>
+            <div style={{ fontSize:11, color:colors.textMuted, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:2 }}>
               Song Manager
             </div>
-            <div style={{ fontSize:15, color:"#e0dcd0" }}>{songs.length} songs in library</div>
+            <div style={{ fontSize:15, color:colors.textPrimary }}>{songs.length} songs in library</div>
           </div>
           <button onClick={onClose} style={{
-            background:"none", border:"none", color:"#888", cursor:"pointer", fontSize:22, lineHeight:1,
+            background:"none", border:"none", color:colors.textMuted, cursor:"pointer", fontSize:22, lineHeight:1,
           }}>×</button>
         </div>
 
         {/* Toolbar */}
         <div style={{
-          padding:"10px 20px", borderBottom:"1px solid #1a1a30",
+          padding:"10px 20px", borderBottom:`1px solid ${colors.borderLight}`,
           display:"flex", gap:10, flexShrink:0,
         }}>
           <input
@@ -174,14 +175,14 @@ export default function SongAdmin({ onClose }) {
             onChange={e => setSearch(e.target.value)}
             placeholder="Search songs or artists…"
             style={{
-              flex:1, background:"#18182c", border:"1px solid #282840",
-              color:"#e0dcd0", padding:"7px 12px", borderRadius:4,
+              flex:1, background:colors.bgInput, border:`1px solid ${colors.borderMed}`,
+              color:colors.textPrimary, padding:"7px 12px", borderRadius:4,
               fontSize:12, fontFamily:"inherit", outline:"none",
             }}
           />
           <button onClick={() => { setAdding(true); setEditingId(null); }} style={{
-            padding:"7px 14px", background:"#5ecdc4", border:"none",
-            color:"#0d0d1c", borderRadius:4, cursor:"pointer", fontSize:12,
+            padding:"7px 14px", background:colors.teal, border:"none",
+            color: colors.onAccent, borderRadius:4, cursor:"pointer", fontSize:12,
             fontFamily:"inherit", fontWeight:"bold", whiteSpace:"nowrap",
           }}>+ Add Song</button>
         </div>
@@ -192,7 +193,7 @@ export default function SongAdmin({ onClose }) {
           {/* Add form */}
           {adding && (
             <div style={{ marginBottom:16 }}>
-              <div style={{ fontSize:11, color:"#5ecdc4", letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:8 }}>
+              <div style={{ fontSize:11, color:colors.teal, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:8 }}>
                 New Song
               </div>
               <SongForm
@@ -220,32 +221,32 @@ export default function SongAdmin({ onClose }) {
                   <div style={{
                     display:"flex", alignItems:"center", gap:10,
                     padding:"8px 10px", borderRadius:4,
-                    background:"#141428", border:"1px solid #1e1e36",
+                    background:colors.bgCard, border:`1px solid ${colors.borderMed}`,
                   }}>
                     <div style={{
                       width:8, height:8, borderRadius:"50%", flexShrink:0,
-                      background: VIBE_COLORS[song.vibe] || "#444",
+                      background: VIBE_COLORS[song.vibe] || colors.vibeDotFallback,
                     }} />
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:14, color:"#e0dcd0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                      <div style={{ fontSize:14, color:colors.textPrimary, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                         {song.title}
                       </div>
-                      <div style={{ fontSize:11, color:"#999", marginTop:1 }}>
+                      <div style={{ fontSize:11, color:colors.textSecondary, marginTop:1 }}>
                         {song.artist} · {song.genre} · {song.bpm} BPM · {song.vibe}
                       </div>
                       {song.note && (
-                        <div style={{ fontSize:11, color:"#7a9a90", marginTop:3, fontStyle:"italic", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                        <div style={{ fontSize:11, color:colors.textNote, marginTop:3, fontStyle:"italic", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                           {song.note}
                         </div>
                       )}
                     </div>
                     <button onClick={() => { setEditingId(song.id); setAdding(false); }} style={{
-                      padding:"3px 10px", background:"transparent", border:"1px solid #282840",
-                      color:"#888", borderRadius:3, cursor:"pointer", fontSize:11, fontFamily:"inherit",
+                      padding:"3px 10px", background:"transparent", border:`1px solid ${colors.borderMed}`,
+                      color:colors.textMuted, borderRadius:3, cursor:"pointer", fontSize:11, fontFamily:"inherit",
                     }}>Edit</button>
                     <button onClick={() => setConfirmDelete(song)} style={{
-                      padding:"3px 8px", background:"transparent", border:"1px solid #3a2020",
-                      color:"#906060", borderRadius:3, cursor:"pointer", fontSize:11, fontFamily:"inherit",
+                      padding:"3px 8px", background:"transparent", border:`1px solid ${colors.borderRed}`,
+                      color:colors.danger, borderRadius:3, cursor:"pointer", fontSize:11, fontFamily:"inherit",
                     }}>✕</button>
                   </div>
                 )}
@@ -262,21 +263,21 @@ export default function SongAdmin({ onClose }) {
           display:"flex", alignItems:"center", justifyContent:"center", zIndex:10000,
         }}>
           <div style={{
-            background:"#141428", border:"1px solid #282840", borderRadius:8,
+            background:colors.bgCard, border:`1px solid ${colors.borderMed}`, borderRadius:8,
             padding:"24px 20px", maxWidth:300, width:"90%",
           }}>
-            <div style={{ fontSize:13, color:"#e0dcd0", marginBottom:20, lineHeight:1.6 }}>
-              Delete <strong style={{ color:"#f07272" }}>{confirmDelete.title}</strong> from the library?
-              <br /><span style={{ fontSize:11, color:"#888" }}>This won't affect existing setlists.</span>
+            <div style={{ fontSize:13, color:colors.textPrimary, marginBottom:20, lineHeight:1.6 }}>
+              Delete <strong style={{ color:colors.coral }}>{confirmDelete.title}</strong> from the library?
+              <br /><span style={{ fontSize:11, color:colors.textMuted }}>This won't affect existing setlists.</span>
             </div>
             <div style={{ display:"flex", gap:8 }}>
               <button onClick={() => setConfirmDelete(null)} style={{
-                flex:1, padding:"10px", background:"transparent", border:"1px solid #282840",
-                color:"#888", borderRadius:4, cursor:"pointer", fontSize:12, fontFamily:"inherit",
+                flex:1, padding:"10px", background:"transparent", border:`1px solid ${colors.borderMed}`,
+                color:colors.textMuted, borderRadius:4, cursor:"pointer", fontSize:12, fontFamily:"inherit",
               }}>Cancel</button>
               <button onClick={() => handleDelete(confirmDelete)} style={{
-                flex:1, padding:"10px", background:"#f07272", border:"none",
-                color:"#0d0d1c", borderRadius:4, cursor:"pointer", fontSize:12,
+                flex:1, padding:"10px", background:colors.coral, border:"none",
+                color: colors.onAccent, borderRadius:4, cursor:"pointer", fontSize:12,
                 fontFamily:"inherit", fontWeight:"bold",
               }}>Delete</button>
             </div>

@@ -1,4 +1,5 @@
 import { useSongs } from "../context/SongsContext";
+import { colors } from "../theme";
 
 export default function PrintModal({ show, onClose, onToast }) {
   const { songs } = useSongs();
@@ -42,29 +43,29 @@ export default function PrintModal({ show, onClose, onToast }) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background:"#0d0d1c", border:"1px solid #282840",
+          background: colors.bgPage, border:`1px solid ${colors.borderMed}`,
           borderRadius:6, width:"min(600px, 95vw)", maxHeight:"85vh",
           display:"flex", flexDirection:"column", overflow:"hidden",
         }}
       >
         {/* Header */}
         <div style={{
-          padding:"16px 20px", borderBottom:"1px solid #1e1e36",
+          padding:"16px 20px", borderBottom:`1px solid ${colors.borderMed}`,
           display:"flex", justifyContent:"space-between", alignItems:"center",
         }}>
           <div>
-            <div style={{ fontSize:11, color:"#888", letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:4 }}>
+            <div style={{ fontSize:11, color:colors.textMuted, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:4 }}>
               Export Set List
             </div>
-            <div style={{ fontSize:16, color:"#e0dcd0" }}>{name}</div>
+            <div style={{ fontSize:16, color:colors.textPrimary }}>{name}</div>
             {(date || venue) && (
-              <div style={{ fontSize:11, color:"#666", marginTop:2 }}>
+              <div style={{ fontSize:11, color:colors.textDim, marginTop:2 }}>
                 {[date, venue].filter(Boolean).join(" · ")}
               </div>
             )}
           </div>
           <button onClick={onClose} style={{
-            background:"none", border:"none", color:"#888", cursor:"pointer",
+            background:"none", border:"none", color:colors.textMuted, cursor:"pointer",
             fontSize:20, lineHeight:1,
           }}>×</button>
         </div>
@@ -77,20 +78,20 @@ export default function PrintModal({ show, onClose, onToast }) {
             return (
               <div key={id} style={{
                 display:"flex", gap:14, padding:"7px 0",
-                borderBottom:"1px solid #1a1a30",
+                borderBottom:`1px solid ${colors.borderLight}`,
               }}>
-                <div style={{ color:"#6868a0", fontSize:12, minWidth:24, textAlign:"right", fontVariantNumeric:"tabular-nums" }}>
+                <div style={{ color:colors.purple, fontSize:12, minWidth:24, textAlign:"right", fontVariantNumeric:"tabular-nums" }}>
                   {String(i+1).padStart(2,"0")}
                 </div>
                 <div style={{ flex:1 }}>
-                  <div style={{ fontSize:13, color:"#ddd" }}>{s.title}</div>
-                  <div style={{ fontSize:10, color:"#999", marginTop:1 }}>{s.artist}</div>
+                  <div style={{ fontSize:13, color:colors.textPrimary }}>{s.title}</div>
+                  <div style={{ fontSize:10, color:colors.textSecondary, marginTop:1 }}>{s.artist}</div>
                 </div>
-                <div style={{ fontSize:10, color:"#777", alignSelf:"center" }}>{s.bpm} BPM</div>
+                <div style={{ fontSize:10, color:colors.textDim, alignSelf:"center" }}>{s.bpm} BPM</div>
               </div>
             );
           })}
-          <div style={{ fontSize:11, color:"#888", paddingTop:12 }}>
+          <div style={{ fontSize:11, color:colors.textMuted, paddingTop:12 }}>
             {songIds.length} songs
             {suggestedBy && ` · Suggested by ${suggestedBy}`}
           </div>
@@ -98,19 +99,19 @@ export default function PrintModal({ show, onClose, onToast }) {
 
         {/* Actions */}
         <div style={{
-          padding:"12px 20px", borderTop:"1px solid #1e1e36",
+          padding:"12px 20px", borderTop:`1px solid ${colors.borderMed}`,
           display:"flex", gap:8, justifyContent:"flex-end",
         }}>
           <button onClick={handleCopy} style={{
             padding:"8px 16px", background:"transparent",
-            border:"1px solid #282840", color:"#aaa",
+            border:`1px solid ${colors.borderMed}`, color:colors.textSecondary,
             borderRadius:4, cursor:"pointer", fontSize:12, fontFamily:"inherit",
           }}>
             Copy Text
           </button>
           <button onClick={handlePrint} style={{
-            padding:"8px 16px", background:"#f07272",
-            border:"none", color:"#0d0d1c",
+            padding:"8px 16px", background:colors.coral,
+            border:"none", color: colors.onAccent,
             borderRadius:4, cursor:"pointer", fontSize:12,
             fontFamily:"inherit", fontWeight:"bold",
           }}>

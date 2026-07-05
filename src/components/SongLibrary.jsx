@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { VIBE_COLORS } from "../data/songs";
 import { useSongs } from "../context/SongsContext";
+import { colors } from "../theme";
 
 const SORT_MODES = [
   { id: "title",      label: "A–Z"     },
@@ -57,8 +58,8 @@ export default function SongLibrary({ setlistSongIds, onAdd, onAddAll }) {
           placeholder="Search songs or artists…"
           style={{
             width:"100%", boxSizing:"border-box",
-            background:"#18182c", border:"1px solid #282840",
-            color:"#e0dcd0", padding:"8px 12px", borderRadius:4,
+            background:colors.bgInput, border:`1px solid ${colors.borderMed}`,
+            color:colors.textPrimary, padding:"8px 12px", borderRadius:4,
             fontSize:13, fontFamily:"inherit", outline:"none",
           }}
         />
@@ -73,17 +74,17 @@ export default function SongLibrary({ setlistSongIds, onAdd, onAddAll }) {
         <button onClick={() => setGenreFilter(null)} style={{
           padding:"4px 10px", borderRadius:12, fontSize:11, cursor:"pointer",
           fontFamily:"inherit", whiteSpace:"nowrap", flexShrink:0,
-          border: !genreFilter ? "1px solid #f07272" : "1px solid #282840",
-          background: !genreFilter ? "#2a1020" : "transparent",
-          color: !genreFilter ? "#f07272" : "#666",
+          border: !genreFilter ? `1px solid ${colors.coral}` : `1px solid ${colors.borderMed}`,
+          background: !genreFilter ? colors.bgSelectedWash : "transparent",
+          color: !genreFilter ? colors.coral : colors.textDim,
         }}>All</button>
         {genres.map(g => (
           <button key={g} onClick={() => setGenreFilter(f => f === g ? null : g)} style={{
             padding:"4px 10px", borderRadius:12, fontSize:11, cursor:"pointer",
             fontFamily:"inherit", whiteSpace:"nowrap", flexShrink:0,
-            border: genreFilter === g ? "1px solid #f07272" : "1px solid #282840",
-            background: genreFilter === g ? "#2a1020" : "transparent",
-            color: genreFilter === g ? "#f07272" : "#666",
+            border: genreFilter === g ? `1px solid ${colors.coral}` : `1px solid ${colors.borderMed}`,
+            background: genreFilter === g ? colors.bgSelectedWash : "transparent",
+            color: genreFilter === g ? colors.coral : colors.textDim,
           }}>{g}</button>
         ))}
       </div>
@@ -101,9 +102,9 @@ export default function SongLibrary({ setlistSongIds, onAdd, onAddAll }) {
             }} style={{
               padding:"4px 10px", borderRadius:3, fontSize:11, cursor:"pointer",
               fontFamily:"inherit", letterSpacing:"0.05em", whiteSpace:"nowrap",
-              border: active ? "1px solid #f07272" : "1px solid #282840",
-              background: active ? "#2a1020" : "transparent",
-              color: active ? "#f07272" : "#888",
+              border: active ? `1px solid ${colors.coral}` : `1px solid ${colors.borderMed}`,
+              background: active ? colors.bgSelectedWash : "transparent",
+              color: active ? colors.coral : colors.textMuted,
             }}>{label}</button>
           );
         })}
@@ -111,7 +112,7 @@ export default function SongLibrary({ setlistSongIds, onAdd, onAddAll }) {
           <button onClick={() => onAddAll(filtered.filter(s => !inSet.has(s.id)).map(s => s.id))} style={{
             marginLeft:"auto", padding:"4px 10px", borderRadius:3, fontSize:11,
             cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap",
-            border:"1px solid #2a4a2a", background:"transparent", color:"#6ecf6e",
+            border: `1px solid ${colors.borderGreen}`, background:"transparent", color:colors.green,
           }}>+ Add All ({addableCount})</button>
         )}
       </div>
@@ -126,31 +127,31 @@ export default function SongLibrary({ setlistSongIds, onAdd, onAddAll }) {
               style={{
                 display:"flex", alignItems:"center", gap:8,
                 padding:"8px 8px", borderRadius:4, marginBottom:2,
-                background: added ? "#1a2828" : "transparent",
+                background: added ? colors.bgAddedRow : "transparent",
                 opacity: added ? 0.5 : 1,
                 cursor: added ? "default" : "pointer",
                 transition:"background 0.1s",
               }}
               onClick={() => !added && onAdd(song.id)}
-              onMouseEnter={e => { if(!added) e.currentTarget.style.background="#18182c"; }}
+              onMouseEnter={e => { if(!added) e.currentTarget.style.background=colors.bgInput; }}
               onMouseLeave={e => { if(!added) e.currentTarget.style.background="transparent"; }}
             >
               <div style={{
                 width:8, height:8, borderRadius:"50%", flexShrink:0,
-                background: VIBE_COLORS[song.vibe] || "#444",
+                background: VIBE_COLORS[song.vibe] || colors.vibeDotFallback,
               }} />
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:15, color:"#ddd", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                <div style={{ fontSize:15, color:colors.textPrimary, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                   {song.title}
                 </div>
-                <div style={{ fontSize:12, color:"#999", marginTop:1 }}>
+                <div style={{ fontSize:12, color:colors.textSecondary, marginTop:1 }}>
                   {song.artist} · {song.genre} · {song.bpm} BPM{song.key ? ` · ${song.key}` : ""}
                 </div>
               </div>
               {added
-                ? <span style={{ fontSize:10, color:"#5ecdc4" }}>✓</span>
+                ? <span style={{ fontSize:10, color:colors.teal }}>✓</span>
                 : <button style={{
-                    background:"none", border:"1px solid #282840", color:"#888",
+                    background:"none", border:`1px solid ${colors.borderMed}`, color:colors.textMuted,
                     borderRadius:3, padding:"2px 8px", cursor:"pointer",
                     fontSize:13, flexShrink:0, fontFamily:"inherit",
                   }}>+</button>

@@ -7,6 +7,7 @@ import {
   useSortable, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { colors } from "../theme";
 import { VIBE_COLORS } from "../data/songs";
 import { useSongs } from "../context/SongsContext";
 
@@ -31,43 +32,43 @@ function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev }) {
   return (
     <div ref={setNodeRef} style={style}>
       {sameKeyAsPrev && (
-        <div style={{ fontSize:10, color:"#c09040", paddingLeft:44, paddingBottom:2, marginTop:-1 }}>
+        <div style={{ fontSize:10, color:colors.gold, paddingLeft:44, paddingBottom:2, marginTop:-1 }}>
           ⚠ same key as previous song
         </div>
       )}
       <div style={{
         display:"flex", alignItems:"center", gap:10,
         padding:"10px 10px", borderRadius:4, marginBottom:3,
-        background:"#141428",
-        border: sameKeyAsPrev ? "1px solid #6a4a10" : "1px solid #1e1e36",
+        background:colors.bgCard,
+        border: sameKeyAsPrev ? `1px solid ${colors.borderGold}` : `1px solid ${colors.borderMed}`,
         userSelect:"none",
       }}>
         {/* drag handle */}
         <div
           {...listeners} {...attributes}
-          style={{ color:"#666", cursor:"grab", fontSize:15, flexShrink:0, paddingRight:2, touchAction:"none" }}
+          style={{ color:colors.textDim, cursor:"grab", fontSize:15, flexShrink:0, paddingRight:2, touchAction:"none" }}
         >
           ⠿
         </div>
         {/* number */}
-        <div style={{ color:"#6868a0", fontSize:13, minWidth:22, textAlign:"right", fontVariantNumeric:"tabular-nums" }}>
+        <div style={{ color:colors.purple, fontSize:13, minWidth:22, textAlign:"right", fontVariantNumeric:"tabular-nums" }}>
           {index + 1}
         </div>
         {/* vibe dot */}
         <div style={{
           width:8, height:8, borderRadius:"50%", flexShrink:0,
-          background: VIBE_COLORS[song.vibe] || "#444",
+          background: VIBE_COLORS[song.vibe] || colors.vibeDotFallback,
         }} />
         {/* info */}
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontSize:15, color:"#e0dcd0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+          <div style={{ fontSize:15, color:colors.textPrimary, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
             {song.title}
           </div>
-          <div style={{ fontSize:12, color:"#999", marginTop:1 }}>
+          <div style={{ fontSize:12, color:colors.textSecondary, marginTop:1 }}>
             {song.artist} · {song.bpm} BPM
           </div>
           {song.note && (
-            <div style={{ fontSize:11, color:"#7a9a90", marginTop:3, fontStyle:"italic", lineHeight:1.4 }}>
+            <div style={{ fontSize:11, color:colors.textNote, marginTop:3, fontStyle:"italic", lineHeight:1.4 }}>
               {song.note}
             </div>
           )}
@@ -76,22 +77,22 @@ function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev }) {
         <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4, flexShrink:0 }}>
           {song.key && (
             <div style={{
-              fontSize:11, fontWeight:"bold", color:"#0d0d1c",
-              background: sameKeyAsPrev ? "#c09040" : "#5ecdc4",
+              fontSize:11, fontWeight:"bold", color: colors.onAccent,
+              background: sameKeyAsPrev ? colors.gold : colors.teal,
               borderRadius:3, padding:"2px 6px", letterSpacing:"0.05em",
             }}>
               {song.key}
             </div>
           )}
           {song.duration && (
-            <div style={{ fontSize:11, color:"#666" }}>{fmtDuration(song.duration)}</div>
+            <div style={{ fontSize:11, color:colors.textDim }}>{fmtDuration(song.duration)}</div>
           )}
         </div>
         {/* remove */}
         <button
           onClick={() => onRemove(id)}
           style={{
-            background:"none", border:"none", color:"#777", cursor:"pointer",
+            background:"none", border:"none", color:colors.textDim, cursor:"pointer",
             fontSize:18, padding:"0 4px", flexShrink:0, lineHeight:1,
           }}
           title="Remove"
@@ -132,7 +133,7 @@ export default function SetlistBuilder({ songIds, onChange }) {
     return (
       <div style={{
         flex:1, display:"flex", alignItems:"center", justifyContent:"center",
-        color:"#666", fontSize:14, textAlign:"center", padding:24, fontStyle:"italic",
+        color:colors.textDim, fontSize:14, textAlign:"center", padding:24, fontStyle:"italic",
       }}>
         ← Click songs from the library to add them here
       </div>

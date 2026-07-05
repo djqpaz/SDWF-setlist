@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSongs } from "../context/SongsContext";
+import { colors } from "../theme";
 
 const PRESETS = [
   {
@@ -193,21 +194,21 @@ export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
       zIndex: 100, fontFamily: "'Georgia', serif",
     }} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{
-        background: "#0d0d1c", border: "1px solid #282840",
+        background: colors.bgPage, border: `1px solid ${colors.borderMed}`,
         borderRadius: 6, width: 560, maxWidth: "95vw", maxHeight: "90vh",
         display: "flex", flexDirection: "column", overflow: "hidden",
       }}>
         {/* Header */}
         <div style={{
-          padding: "14px 18px", borderBottom: "1px solid #1a1a22",
+          padding: "14px 18px", borderBottom: `1px solid ${colors.borderLight}`,
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
           <div>
-            <div style={{ fontSize: 14, color: "#e0dcd0", fontWeight: "bold" }}>Generate Set List</div>
-            <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>Pick a strategy and let it rip</div>
+            <div style={{ fontSize: 14, color: colors.textPrimary, fontWeight: "bold" }}>Generate Set List</div>
+            <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>Pick a strategy and let it rip</div>
           </div>
           <button onClick={onClose} style={{
-            background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: 18, lineHeight: 1,
+            background: "none", border: "none", color: colors.textMuted, cursor: "pointer", fontSize: 18, lineHeight: 1,
           }}>×</button>
         </div>
 
@@ -216,26 +217,26 @@ export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 18 }}>
             {PRESETS.map(p => (
               <button key={p.id} onClick={() => { setPreset(p.id); setPreview(null); }} style={{
-                background: preset === p.id ? "#1e1028" : "#0c0c1a",
-                border: `1px solid ${preset === p.id ? "#f07272" : "#1e1e36"}`,
+                background: preset === p.id ? colors.bgSelectedWash : colors.bgPanel,
+                border: `1px solid ${preset === p.id ? colors.coral : colors.borderMed}`,
                 borderRadius: 4, padding: "10px 12px", textAlign: "left",
-                cursor: "pointer", color: "#e0dcd0", fontFamily: "inherit",
+                cursor: "pointer", color: colors.textPrimary, fontFamily: "inherit",
               }}>
                 <div style={{ fontSize: 13 }}>{p.icon} {p.label}</div>
-                <div style={{ fontSize: 11, color: "#888", marginTop: 3 }}>{p.desc}</div>
+                <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 3 }}>{p.desc}</div>
               </button>
             ))}
           </div>
 
           {/* Controls */}
           <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 18, flexWrap: "wrap" }}>
-            <label style={{ fontSize: 12, color: "#888", display: "flex", alignItems: "center", gap: 8 }}>
+            <label style={{ fontSize: 12, color: colors.textMuted, display: "flex", alignItems: "center", gap: 8 }}>
               Songs:
               <input
                 type="number" min={4} max={30} value={count}
                 onChange={e => { setCount(Number(e.target.value)); setPreview(null); }}
                 style={{
-                  background: "#18182c", border: "1px solid #282840", color: "#e0dcd0",
+                  background: colors.bgInput, border: `1px solid ${colors.borderMed}`, color: colors.textPrimary,
                   padding: "4px 8px", borderRadius: 3, width: 56, fontSize: 12,
                   fontFamily: "inherit", outline: "none",
                 }}
@@ -246,11 +247,11 @@ export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
               {["replace", "add"].map(mode => (
                 <button key={mode} onClick={() => { setReplaceMode(mode); setPreview(null); }} style={{
                   padding: "4px 10px", fontSize: 11, fontFamily: "inherit",
-                  background: replaceMode === mode ? "#18182c" : "transparent",
-                  border: "1px solid #282840",
+                  background: replaceMode === mode ? colors.bgInput : "transparent",
+                  border: `1px solid ${colors.borderMed}`,
                   borderRadius: mode === "replace" ? "3px 0 0 3px" : "0 3px 3px 0",
                   marginLeft: mode === "add" ? -1 : 0,
-                  color: replaceMode === mode ? "#f07272" : "#888",
+                  color: replaceMode === mode ? colors.coral : colors.textMuted,
                   cursor: "pointer",
                 }}>
                   {mode === "replace" ? "Replace set" : "Add to set"}
@@ -260,7 +261,7 @@ export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
 
             <button onClick={handlePreview} style={{
               padding: "4px 12px", fontSize: 11, fontFamily: "inherit",
-              background: "transparent", border: "1px solid #1e3a48", color: "#5ecdc4",
+              background: "transparent", border: `1px solid ${colors.borderTeal}`, color: colors.teal,
               borderRadius: 3, cursor: "pointer", marginLeft: "auto",
             }}>
               Preview
@@ -270,20 +271,20 @@ export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
           {/* Preview */}
           {preview && (
             <div style={{
-              background: "#0c0c1a", border: "1px solid #1e1e36",
+              background: colors.bgPanel, border: `1px solid ${colors.borderMed}`,
               borderRadius: 4, padding: 12, marginBottom: 14,
             }}>
-              <div style={{ fontSize: 10, color: "#777", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>
+              <div style={{ fontSize: 10, color: colors.textDim, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>
                 Preview — {preview.length} songs
               </div>
               {preview.map((id, i) => {
                 const s = songMap[id];
                 return s ? (
                   <div key={id} style={{ display: "flex", gap: 10, marginBottom: 5, alignItems: "baseline" }}>
-                    <span style={{ color: "#666", fontSize: 11, minWidth: 22, textAlign: "right" }}>{i + 1}.</span>
-                    <span style={{ fontSize: 13, color: "#c8c4b8" }}>{s.title}</span>
-                    <span style={{ fontSize: 11, color: "#888" }}>{s.artist}</span>
-                    <span style={{ fontSize: 10, color: "#666", marginLeft: "auto" }}>{s.bpm} bpm · {s.vibe}</span>
+                    <span style={{ color: colors.textDim, fontSize: 11, minWidth: 22, textAlign: "right" }}>{i + 1}.</span>
+                    <span style={{ fontSize: 13, color: colors.textPrimary }}>{s.title}</span>
+                    <span style={{ fontSize: 11, color: colors.textMuted }}>{s.artist}</span>
+                    <span style={{ fontSize: 10, color: colors.textDim, marginLeft: "auto" }}>{s.bpm} bpm · {s.vibe}</span>
                   </div>
                 ) : null;
               })}
@@ -293,19 +294,19 @@ export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
 
         {/* Footer */}
         <div style={{
-          padding: "12px 18px", borderTop: "1px solid #1a1a22",
+          padding: "12px 18px", borderTop: `1px solid ${colors.borderLight}`,
           display: "flex", justifyContent: "flex-end", gap: 8,
         }}>
           <button onClick={onClose} style={{
             padding: "6px 14px", background: "transparent",
-            border: "1px solid #282840", color: "#666",
+            border: `1px solid ${colors.borderMed}`, color: colors.textDim,
             borderRadius: 3, cursor: "pointer", fontSize: 12, fontFamily: "inherit",
           }}>
             Cancel
           </button>
           <button onClick={handleGenerate} style={{
-            padding: "6px 16px", background: "#f07272",
-            border: "none", color: "#0d0d1c",
+            padding: "6px 16px", background: colors.coral,
+            border: "none", color: colors.onAccent,
             borderRadius: 3, cursor: "pointer", fontSize: 12,
             fontFamily: "inherit", fontWeight: "bold",
           }}>

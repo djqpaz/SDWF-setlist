@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { colors } from "../theme";
 
 export function Toast({ message, type = "success", onDone }) {
   useEffect(() => {
@@ -15,9 +16,9 @@ export function Toast({ message, type = "success", onDone }) {
       bottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
       left: "50%",
       transform: "translateX(-50%)",
-      background: isError ? "#2a1010" : "#101e1a",
-      border: `1px solid ${isError ? "#f07272" : "#5ecdc4"}`,
-      color: isError ? "#f07272" : "#5ecdc4",
+      background: isError ? colors.bgToastError : colors.bgToastSuccess,
+      border: `1px solid ${isError ? colors.coral : colors.teal}`,
+      color: isError ? colors.coral : colors.teal,
       padding: "11px 22px",
       borderRadius: 8,
       fontSize: 14,
@@ -49,22 +50,22 @@ export function ConfirmDialog({ message, onConfirm, onCancel }) {
       fontFamily: "'Georgia', serif",
     }}>
       <div style={{
-        background: "#141428", border: "1px solid #282840",
+        background: colors.bgCard, border: `1px solid ${colors.borderMed}`,
         borderRadius: 10, padding: "24px 20px", maxWidth: 300, width: "90%",
         boxShadow: "0 8px 32px rgba(0,0,0,0.8)",
       }}>
-        <div style={{ fontSize: 14, color: "#e0dcd0", marginBottom: 20, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 14, color: colors.textPrimary, marginBottom: 20, lineHeight: 1.6 }}>
           {message}
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={onCancel} style={{
             flex: 1, padding: "11px", background: "transparent",
-            border: "1px solid #282840", color: "#888",
+            border: `1px solid ${colors.borderMed}`, color: colors.textMuted,
             borderRadius: 5, cursor: "pointer", fontSize: 13, fontFamily: "inherit",
           }}>Cancel</button>
           <button onClick={onConfirm} style={{
-            flex: 1, padding: "11px", background: "#f07272",
-            border: "none", color: "#0d0d1c",
+            flex: 1, padding: "11px", background: colors.coral,
+            border: "none", color: colors.onAccent,
             borderRadius: 5, cursor: "pointer", fontSize: 13,
             fontFamily: "inherit", fontWeight: "bold",
           }}>Confirm</button>
