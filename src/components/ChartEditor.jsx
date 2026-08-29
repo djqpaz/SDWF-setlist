@@ -92,6 +92,11 @@ export default function ChartEditor({ song, onSave, onCancel }) {
     setText(t => t.replace(/\s*$/, "") + "\n\n[" + label + "]\n");
   }
 
+  function openChordSearch() {
+    const q = encodeURIComponent(`${song.title} ${song.artist || ""}`.trim());
+    window.open(`https://www.ultimate-guitar.com/search.php?search_type=title&value=${q}`, "_blank", "noopener,noreferrer");
+  }
+
   async function handleSave() {
     setSaving(true);
     await onSave(text);
@@ -163,10 +168,17 @@ export default function ChartEditor({ song, onSave, onCancel }) {
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", flex:1, minHeight:0, overflow:"hidden" }}>
           {/* Left: source */}
           <div style={{ borderRight:`1px solid ${colors.borderLight}`, display:"flex", flexDirection:"column", minHeight:0 }}>
-            <div style={{ padding:"10px 16px 6px", display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
-              <span style={{ fontSize:10, color:colors.textMuted, letterSpacing:"0.1em", textTransform:"uppercase" }}>
-                Chart source
-              </span>
+            <div style={{ padding:"10px 16px 6px", display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <span style={{ fontSize:10, color:colors.textMuted, letterSpacing:"0.1em", textTransform:"uppercase" }}>
+                  Chart source
+                </span>
+                <button onClick={openChordSearch} style={{
+                  padding:"2px 8px", borderRadius:10, fontSize:10, cursor:"pointer",
+                  fontFamily:"inherit", whiteSpace:"nowrap",
+                  border:`1px solid ${colors.borderTeal}`, background:"transparent", color:colors.teal,
+                }}>Search chords online ↗</button>
+              </div>
               <span style={{ fontSize:11, color:colors.textFaint }}>{sections.length} sections · {lineCount} lines</span>
             </div>
             <textarea
@@ -182,6 +194,8 @@ export default function ChartEditor({ song, onSave, onCancel }) {
             <div style={{ padding:"0 16px 16px", fontSize:11, color:colors.textMuted, lineHeight:1.6, flexShrink:0 }}>
               Chords in [square brackets] sit above the word after them. A line that is only{" "}
               <span style={{ color:colors.coral }}>[SECTION NAME]</span> becomes a banner. Blank lines are ignored.
+              <br />
+              "Search chords online" opens Ultimate Guitar in a new tab as a starting point — paste what you find back in here and reformat it.
             </div>
           </div>
 
