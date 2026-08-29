@@ -5,10 +5,11 @@ import { db } from "../firebase";
 import { useSongs } from "../context/SongsContext";
 import { VIBE_COLORS } from "../data/songs";
 import { colors } from "../theme";
+import ChartEditor from "./ChartEditor";
 
 const VIBES = ["anthemic","epic","fun","groove","joy","love","nostalgia","pride","singalong","soulful","swagger","tension","uplift"];
 
-const EMPTY_SONG = { title:"", artist:"", bpm:"", genre:"", vibe:"groove", year:"", popularity:"", key:"", duration:"", note:"" };
+const EMPTY_SONG = { title:"", artist:"", bpm:"", genre:"", vibe:"groove", year:"", popularity:"", key:"", duration:"", note:"", chart:"" };
 
 function parseDuration(str) {
   const parts = String(str).split(":");
@@ -111,6 +112,7 @@ export default function SongAdmin({ onClose }) {
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [chartFor, setChartFor] = useState(null);
 
   const filtered = songs
     .filter(s => {
@@ -137,6 +139,10 @@ export default function SongAdmin({ onClose }) {
   async function handleDelete(song) {
     await deleteDoc(doc(db, "songs", String(song.id)));
     setConfirmDelete(null);
+  }
+
+  async function handleSaveChart(song, chart) {
+    await updateDoc(doc(db, "songs", String(song.id)), { chart });
   }
 
   return createPortal(
@@ -228,8 +234,14 @@ export default function SongAdmin({ onClose }) {
                       background: VIBE_COLORS[song.vibe] || colors.vibeDotFallback,
                     }} />
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:14, color:colors.textPrimary, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                      <div style={{ fontSize:14, color:colors.textPrimary, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", display:"flex", alignItems:"center", gap:6 }}>
                         {song.title}
+                        {song.chart && (
+                          <span style={{
+                            fontSize:9, color:colors.teal, border:`1px solid ${colors.borderTeal}`,
+                            borderRadius:8, padding:"1px 6px", letterSpacing:"0.05em", textTransform:"uppercase", flexShrink:0,
+                          }}>chart</span>
+                        )}
                       </div>
                       <div style={{ fontSize:11, color:colors.textSecondary, marginTop:1 }}>
                         {song.artist} · {song.genre} · {song.bpm} BPM · {song.vibe}
@@ -240,6 +252,10 @@ export default function SongAdmin({ onClose }) {
                         </div>
                       )}
                     </div>
+                    <button onClick={() => setChartFor(song)} style={{
+                      padding:"3px 10px", background:"transparent", border:`1px solid ${colors.borderTeal}`,
+                      color:colors.teal, borderRadius:3, cursor:"pointer", fontSize:11, fontFamily:"inherit",
+                    }}>Chart</button>
                     <button onClick={() => { setEditingId(song.id); setAdding(false); }} style={{
                       padding:"3px 10px", background:"transparent", border:`1px solid ${colors.borderMed}`,
                       color:colors.textMuted, borderRadius:3, cursor:"pointer", fontSize:11, fontFamily:"inherit",
@@ -283,6 +299,14 @@ export default function SongAdmin({ onClose }) {
             </div>
           </div>
         </div>
+      )}
+
+      {chartFor && (
+        <ChartEditor
+          song={chartFor}
+          onSave={(chart) => handleSaveChart(chartFor, chart)}
+          onCancel={() => setChartFor(null)}
+        />
       )}
     </div>,
     document.body

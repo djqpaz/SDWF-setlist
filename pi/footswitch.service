@@ -1,0 +1,14 @@
+[Unit]
+Description=Prompter footswitch GPIO bridge
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/pi/prompter/footswitch.py
+Restart=always
+RestartSec=2
+User=pi
+SupplementaryGroups=input gpio
+
+[Install]
+WantedBy=multi-user.target

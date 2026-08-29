@@ -13,6 +13,7 @@ import ShowSetlist from "./components/ShowSetlist";
 import VotePanel from "./components/VotePanel";
 import SongAdmin from "./components/SongAdmin";
 import { Toast, ConfirmDialog } from "./components/Toast";
+import { downloadPrompterSet } from "./lib/prompterExport";
 
 const DEFAULT_SHOW = () => ({
   id: crypto.randomUUID(),
@@ -318,6 +319,21 @@ export default function App() {
             background:colors.coral, border:"none", color: colors.onAccent,
             borderRadius:3, cursor:"pointer", fontWeight:"bold",
           }}>Export</button>
+
+          <button
+            onClick={() => {
+              if (activeShow.songIds.length === 0) return;
+              const n = downloadPrompterSet(activeShow, songs);
+              showToast(`Exported ${n} songs for the prompter`);
+            }}
+            disabled={activeShow.songIds.length === 0}
+            style={{
+              padding:"4px 10px", fontSize:12, fontFamily:"inherit",
+              background:"transparent", border:`1px solid ${colors.borderMed}`, color:colors.textMuted,
+              borderRadius:3, cursor: activeShow.songIds.length === 0 ? "default" : "pointer",
+              opacity: activeShow.songIds.length === 0 ? 0.5 : 1,
+            }}
+          >↓ Prompter file</button>
 
           <button onClick={() => deleteShow(activeShow.id)} style={{
             padding:"4px 8px", fontSize:11,
