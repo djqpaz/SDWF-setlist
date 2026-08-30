@@ -63,8 +63,8 @@ function weightedSample(pool, n) {
   return sorted.slice(0, n).map(s => s.id);
 }
 
-function generate(songs, presetId, count, exclude) {
-  const pool = songs.filter(s => !exclude.has(s.id));
+function generate(songs, presetId, count, exclude, includeXmas) {
+  const pool = songs.filter(s => !exclude.has(s.id) && (includeXmas || s.genre !== "Christmas"));
 
   if (presetId === "random") {
     return shuffle(pool).slice(0, count).map(s => s.id);
@@ -169,13 +169,14 @@ export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
   const [preset, setPreset] = useState("arc");
   const [count, setCount] = useState(12);
   const [replaceMode, setReplaceMode] = useState("replace");
+  const [includeXmas, setIncludeXmas] = useState(false);
   const [preview, setPreview] = useState(null);
 
   const songMap = Object.fromEntries(songs.map(s => [s.id, s]));
 
   function handleGenerate() {
     const exclude = replaceMode === "add" ? new Set(currentSongIds) : new Set();
-    const ids = generate(songs, preset, count, exclude);
+    const ids = generate(songs, preset, count, exclude, includeXmas);
     const newIds = replaceMode === "replace" ? ids : [...currentSongIds, ...ids];
     onGenerate(newIds);
     onClose();
@@ -183,7 +184,7 @@ export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
 
   function handlePreview() {
     const exclude = replaceMode === "add" ? new Set(currentSongIds) : new Set();
-    const ids = generate(songs, preset, count, exclude);
+    const ids = generate(songs, preset, count, exclude, includeXmas);
     setPreview(ids);
   }
 
@@ -258,6 +259,15 @@ export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
                 </button>
               ))}
             </div>
+
+            <label style={{ fontSize: 12, color: colors.textMuted, display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+              <input
+                type="checkbox" checked={includeXmas}
+                onChange={e => { setIncludeXmas(e.target.checked); setPreview(null); }}
+                style={{ cursor: "pointer" }}
+              />
+              🎄 Include Christmas songs
+            </label>
 
             <button onClick={handlePreview} style={{
               padding: "4px 12px", fontSize: 11, fontFamily: "inherit",
