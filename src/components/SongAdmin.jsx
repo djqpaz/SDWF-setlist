@@ -50,6 +50,7 @@ function SongForm({ initial, onSave, onCancel, saving }) {
 
   function handleSave() {
     if (!form.title.trim() || !form.artist.trim() || !form.bpm) return;
+    if (!form.key.trim() || !parseDuration(form.duration)) return;
     onSave({
       ...form,
       bpm: Number(form.bpm),
@@ -68,8 +69,8 @@ function SongForm({ initial, onSave, onCancel, saving }) {
         <Field label="Title *" value={form.title} onChange={set("title")} />
         <Field label="Artist *" value={form.artist} onChange={set("artist")} />
         <Field label="BPM *" value={form.bpm} onChange={set("bpm")} type="number" />
-        <Field label="Key (e.g. G, Am, C#)" value={form.key || ""} onChange={set("key")} />
-        <Field label="Duration (m:ss)" value={fmtDuration(form.duration) || form.duration} onChange={set("duration")} />
+        <Field label="Key (e.g. G, Am, C#) *" value={form.key || ""} onChange={set("key")} />
+        <Field label="Duration (m:ss) *" value={fmtDuration(form.duration) || form.duration} onChange={set("duration")} />
         <Field label="Genre" value={form.genre} onChange={set("genre")} />
         <Field label="Vibe" value={form.vibe} onChange={set("vibe")} options={VIBES} />
         <Field label="Year" value={form.year} onChange={set("year")} type="number" />
