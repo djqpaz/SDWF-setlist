@@ -59,6 +59,8 @@ export default function App() {
         if (prev && data.find(s => s.id === prev)) return prev;
         return data[0]?.id ?? null;
       });
+    }, (err) => {
+      console.error("Shows listener failed:", err);
     });
     return unsub;
   }, []);

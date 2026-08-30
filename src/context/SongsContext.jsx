@@ -30,21 +30,22 @@ export function SongsProvider({ children }) {
         return;
       }
 
-      // Migrate any songs missing key or duration
+      // Migrate any songs missing key or duration, using the seed catalog
+      // as a source of backfill values (only applies to the original songs —
+      // custom-added songs with no seed entry are left alone so they can't
+      // get stuck in an unresolvable migration loop).
       const needsUpdate = snapshot.docs.filter(d => {
         const data = d.data();
-        return !data.key || !data.duration;
+        return (!data.key || !data.duration) && seedMap[d.id];
       });
       if (needsUpdate.length > 0) {
         const batch = writeBatch(db);
         needsUpdate.forEach(d => {
           const seed = seedMap[d.id];
-          if (seed) {
-            const updates = {};
-            if (!d.data().key) updates.key = seed.key;
-            if (!d.data().duration) updates.duration = seed.duration;
-            batch.update(doc(db, "songs", d.id), updates);
-          }
+          const updates = {};
+          if (!d.data().key) updates.key = seed.key;
+          if (!d.data().duration) updates.duration = seed.duration;
+          batch.update(doc(db, "songs", d.id), updates);
         });
         await batch.commit();
         return;
@@ -53,6 +54,8 @@ export function SongsProvider({ children }) {
       const data = snapshot.docs.map(d => d.data());
       setSongs(data);
       setLoading(false);
+    }, (err) => {
+      console.error("Songs listener failed:", err);
     });
     return unsub;
   }, []);
