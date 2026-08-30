@@ -45,7 +45,10 @@ function Field({ label, value, onChange, type = "text", options }) {
 }
 
 function SongForm({ initial, onSave, onCancel, saving }) {
-  const [form, setForm] = useState(initial);
+  const [form, setForm] = useState(() => ({
+    ...initial,
+    duration: typeof initial.duration === "number" ? fmtDuration(initial.duration) : initial.duration,
+  }));
   const set = (key) => (val) => setForm(f => ({ ...f, [key]: val }));
 
   function handleSave() {
@@ -70,7 +73,7 @@ function SongForm({ initial, onSave, onCancel, saving }) {
         <Field label="Artist *" value={form.artist} onChange={set("artist")} />
         <Field label="BPM *" value={form.bpm} onChange={set("bpm")} type="number" />
         <Field label="Key (e.g. G, Am, C#)" value={form.key || ""} onChange={set("key")} />
-        <Field label="Duration (m:ss)" value={fmtDuration(form.duration) || form.duration} onChange={set("duration")} />
+        <Field label="Duration (m:ss)" value={form.duration} onChange={set("duration")} />
         <Field label="Genre" value={form.genre} onChange={set("genre")} />
         <Field label="Vibe" value={form.vibe} onChange={set("vibe")} options={VIBES} />
         <Field label="Year" value={form.year} onChange={set("year")} type="number" />
