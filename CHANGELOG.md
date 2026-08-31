@@ -3,6 +3,17 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
+## 2026-08-30 — Bulk Import Charts
+
+- Song Manager (⚙ Songs) now has a **Bulk Import Charts** button: paste a
+  whole multi-song chart document and it splits it into per-song charts by
+  matching lines against the library's song titles (falling back to a
+  song's notes, so a medley entry can catch the individual titles it's
+  made of), then saves the matched ones in one batch. Anything before the
+  first match is held aside to assign manually.
+- Loaded chart text for all 17 songs in the Christmas set from the band's
+  charts PDF.
+
 ## 2026-08-29 — Stage Prompter export & Chart Editor
 
 - **Chart Editor** — Song Manager can now hold a lyric/chord chart per song.
