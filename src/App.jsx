@@ -526,7 +526,7 @@ export default function App() {
             onClose={() => setShowGenerate(false)}
           />
         )}
-        {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} />}
+        {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} onToast={showToast} />}
         {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
         {confirmDialog && (
           <ConfirmDialog
@@ -670,7 +670,7 @@ export default function App() {
           onClose={() => setShowGenerate(false)}
         />
       )}
-      {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} />}
+      {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} onToast={showToast} />}
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
       {confirmDialog && (
         <ConfirmDialog

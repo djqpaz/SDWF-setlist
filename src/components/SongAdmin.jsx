@@ -6,6 +6,7 @@ import { useSongs } from "../context/SongsContext";
 import { VIBE_COLORS } from "../data/songs";
 import { colors } from "../theme";
 import ChartEditor from "./ChartEditor";
+import BulkImportCharts from "./BulkImportCharts";
 
 const VIBES = ["anthemic","epic","fun","groove","joy","love","nostalgia","pride","singalong","soulful","swagger","tension","uplift"];
 
@@ -109,7 +110,7 @@ function SongForm({ initial, onSave, onCancel, saving }) {
   );
 }
 
-export default function SongAdmin({ onClose }) {
+export default function SongAdmin({ onClose, onToast }) {
   const { songs } = useSongs();
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -117,6 +118,7 @@ export default function SongAdmin({ onClose }) {
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [chartFor, setChartFor] = useState(null);
+  const [bulkImporting, setBulkImporting] = useState(false);
 
   const filtered = songs
     .filter(s => {
@@ -147,6 +149,12 @@ export default function SongAdmin({ onClose }) {
 
   async function handleSaveChart(song, chart) {
     await updateDoc(doc(db, "songs", String(song.id)), { chart });
+  }
+
+  function handleBulkImported(count, err) {
+    setBulkImporting(false);
+    if (err) return onToast?.("Bulk import failed — check the console", "error");
+    if (count > 0) onToast?.(`Imported ${count} chart${count === 1 ? "" : "s"} ✓`);
   }
 
   return createPortal(
@@ -190,6 +198,11 @@ export default function SongAdmin({ onClose }) {
               fontSize:12, fontFamily:"inherit", outline:"none",
             }}
           />
+          <button onClick={() => setBulkImporting(true)} style={{
+            padding:"7px 14px", background:"transparent", border:`1px solid ${colors.borderTeal}`,
+            color: colors.teal, borderRadius:4, cursor:"pointer", fontSize:12,
+            fontFamily:"inherit", fontWeight:"bold", whiteSpace:"nowrap",
+          }}>Bulk Import Charts</button>
           <button onClick={() => { setAdding(true); setEditingId(null); }} style={{
             padding:"7px 14px", background:colors.teal, border:"none",
             color: colors.onAccent, borderRadius:4, cursor:"pointer", fontSize:12,
@@ -310,6 +323,14 @@ export default function SongAdmin({ onClose }) {
           song={chartFor}
           onSave={(chart) => handleSaveChart(chartFor, chart)}
           onCancel={() => setChartFor(null)}
+        />
+      )}
+
+      {bulkImporting && (
+        <BulkImportCharts
+          songs={songs}
+          onClose={() => setBulkImporting(false)}
+          onImported={handleBulkImported}
         />
       )}
     </div>,
