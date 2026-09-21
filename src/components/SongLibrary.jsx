@@ -4,11 +4,12 @@ import { useSongs } from "../context/SongsContext";
 import { colors } from "../theme";
 
 const SORT_MODES = [
-  { id: "title",      label: "A–Z"     },
-  { id: "bpm",        label: "BPM"     },
-  { id: "year",       label: "Year"    },
-  { id: "popularity", label: "Popular" },
-  { id: "vibe",       label: "Arc"     },
+  { id: "powerRanking", label: "Ranking" },
+  { id: "title",        label: "A–Z"     },
+  { id: "bpm",          label: "BPM"     },
+  { id: "year",         label: "Year"    },
+  { id: "popularity",   label: "Popular" },
+  { id: "vibe",         label: "Arc"     },
 ];
 
 const VIBE_ORDER = ["soulful","love","groove","nostalgia","tension","fun","joy","pride","swagger","uplift","singalong","anthemic","epic"];
@@ -16,18 +17,19 @@ const VIBE_ORDER = ["soulful","love","groove","nostalgia","tension","fun","joy",
 function sortSongs(songs, mode, bpmDesc) {
   const s = [...songs];
   switch (mode) {
-    case "title":      return s.sort((a,b) => a.title.localeCompare(b.title));
-    case "bpm":        return s.sort((a,b) => bpmDesc ? b.bpm - a.bpm : a.bpm - b.bpm);
-    case "year":       return s.sort((a,b) => a.year - b.year);
-    case "popularity": return s.sort((a,b) => b.popularity - a.popularity);
-    case "vibe":       return s.sort((a,b) => VIBE_ORDER.indexOf(a.vibe) - VIBE_ORDER.indexOf(b.vibe));
+    case "powerRanking": return s.sort((a,b) => (a.powerRanking ?? 999) - (b.powerRanking ?? 999));
+    case "title":        return s.sort((a,b) => a.title.localeCompare(b.title));
+    case "bpm":          return s.sort((a,b) => bpmDesc ? b.bpm - a.bpm : a.bpm - b.bpm);
+    case "year":         return s.sort((a,b) => a.year - b.year);
+    case "popularity":   return s.sort((a,b) => b.popularity - a.popularity);
+    case "vibe":         return s.sort((a,b) => VIBE_ORDER.indexOf(a.vibe) - VIBE_ORDER.indexOf(b.vibe));
     default:           return s;
   }
 }
 
 export default function SongLibrary({ setlistSongIds, onAdd, onAddAll }) {
   const { songs } = useSongs();
-  const [sortMode, setSortMode] = useState("title");
+  const [sortMode, setSortMode] = useState("powerRanking");
   const [bpmDesc, setBpmDesc] = useState(false);
   const [search, setSearch] = useState("");
   const [genreFilter, setGenreFilter] = useState(null);
