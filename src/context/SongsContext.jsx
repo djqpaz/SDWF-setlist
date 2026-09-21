@@ -30,13 +30,17 @@ export function SongsProvider({ children }) {
         return;
       }
 
-      // Migrate any songs missing key or duration, using the seed catalog
-      // as a source of backfill values (only applies to the original songs —
-      // custom-added songs with no seed entry are left alone so they can't
-      // get stuck in an unresolvable migration loop).
+      // Migrate any songs missing fields added since initial seed.
+      // Only migrate songs that have a seed entry — custom songs with no seed
+      // are left alone to avoid an unresolvable migration loop.
       const needsUpdate = snapshot.docs.filter(d => {
         const data = d.data();
-        return (!data.key || !data.duration) && seedMap[d.id];
+        const seed = seedMap[d.id];
+        if (!seed) return false;
+        if (!data.key || !data.duration) return true;
+        if (seed.powerRanking !== undefined && data.powerRanking === undefined) return true;
+        if (seed.note && !data.note) return true;
+        return false;
       });
       if (needsUpdate.length > 0) {
         const batch = writeBatch(db);
@@ -45,6 +49,8 @@ export function SongsProvider({ children }) {
           const updates = {};
           if (!d.data().key) updates.key = seed.key;
           if (!d.data().duration) updates.duration = seed.duration;
+          if (seed.powerRanking !== undefined && d.data().powerRanking === undefined) updates.powerRanking = seed.powerRanking;
+          if (seed.note && !d.data().note) updates.note = seed.note;
           batch.update(doc(db, "songs", d.id), updates);
         });
         await batch.commit();
