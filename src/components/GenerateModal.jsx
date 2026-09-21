@@ -45,6 +45,12 @@ const PRESETS = [
     desc: "Structured opener → build → peak → ballad → closer",
     icon: "📈",
   },
+  {
+    id: "ranked",
+    label: "Power Ranking",
+    desc: "Best-known songs first — pulled from the top of the band's ranking list",
+    icon: "🏆",
+  },
 ];
 
 function shuffle(arr) {
@@ -159,6 +165,16 @@ function generate(songs, presetId, count, exclude, includeXmas) {
     }
 
     return result.map(s => s.id);
+  }
+
+  if (presetId === "ranked") {
+    // Sort by powerRanking (songs without one go last), add slight jitter so it's not always identical
+    const ranked = [...pool].sort((a, b) => {
+      const ra = (a.powerRanking ?? 999) + (Math.random() * 4 - 2);
+      const rb = (b.powerRanking ?? 999) + (Math.random() * 4 - 2);
+      return ra - rb;
+    });
+    return ranked.slice(0, count).map(s => s.id);
   }
 
   return shuffle(pool).slice(0, count).map(s => s.id);
