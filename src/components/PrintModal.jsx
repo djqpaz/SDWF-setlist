@@ -41,6 +41,7 @@ export default function PrintModal({ show, onClose, onToast }) {
       display:"flex", alignItems:"center", justifyContent:"center",
     }} onClick={onClose}>
       <div
+        className="print-modal"
         onClick={e => e.stopPropagation()}
         style={{
           background: colors.bgPage, border:`1px solid ${colors.borderMed}`,
@@ -98,7 +99,7 @@ export default function PrintModal({ show, onClose, onToast }) {
         </div>
 
         {/* Actions */}
-        <div style={{
+        <div className="print-no-print" style={{
           padding:"12px 20px", borderTop:`1px solid ${colors.borderMed}`,
           display:"flex", gap:8, justifyContent:"flex-end",
         }}>
@@ -128,10 +129,22 @@ export default function PrintModal({ show, onClose, onToast }) {
           .print-modal {
             position: fixed !important;
             inset: 0 !important;
-            background: white !important;
-            color: black !important;
+            width: 100% !important;
+            max-height: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: #fff !important;
+            color: #000 !important;
             padding: 32px !important;
+            display: block !important;
+            overflow: visible !important;
           }
+          .print-modal * {
+            background: transparent !important;
+            color: #000 !important;
+            border-color: #ccc !important;
+          }
+          .print-no-print { display: none !important; }
         }
       `}</style>
     </div>
