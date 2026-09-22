@@ -13,6 +13,18 @@ export default function VotePage({ showId }) {
   const [songs, setSongs] = useState({});
   const [loading, setLoading] = useState(true);
   const [myVote, setMyVote] = useState(null);
+
+  // Override the app's global overflow:hidden so the vote page can scroll
+  useEffect(() => {
+    document.documentElement.style.overflow = "auto";
+    document.body.style.overflow = "auto";
+    document.getElementById("root").style.overflow = "auto";
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+      document.getElementById("root").style.overflow = "";
+    };
+  }, []);
   const [timeLeft, setTimeLeft] = useState(null);
 
   const voteKey = `sdwf-vote-${showId}`;
