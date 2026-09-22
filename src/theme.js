@@ -28,10 +28,10 @@ export const colors = {
 
   // Text
   textPrimary: "#f7f7f7",
-  textSecondary: "#b8b8cc",
-  textMuted: "#8888aa",
-  textDim: "#666688",
-  textFaint: "#44445a",
+  textSecondary: "#d0d0e8",
+  textMuted: "#a8a8c8",
+  textDim: "#8888aa",
+  textFaint: "#666680",
   textNote: "#4ecdc4",
 
   // Accents — SDWF brand colors

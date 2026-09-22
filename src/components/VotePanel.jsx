@@ -133,7 +133,7 @@ export default function VotePanel({ show, onOpen, onClose, onPause, onResume }) 
         </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <div style={{ fontSize: 11, color: colors.textMuted, flex: 1 }}>Let the crowd vote on the next song</div>
+          <div style={{ fontSize: 12, color: colors.textSecondary, flex: 1 }}>Let the crowd vote on the next song</div>
           <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
             {TIMER_OPTIONS.map(opt => (
               <button key={opt.value} onClick={() => {
