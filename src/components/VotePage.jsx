@@ -38,10 +38,14 @@ export default function VotePage({ showId }) {
   // Listen to show
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "shows", showId), snap => {
-      if (snap.exists()) setShow({ id: snap.id, ...snap.data() });
+      if (snap.exists()) {
+        const data = { id: snap.id, ...snap.data() };
+        setShow(data);
+        document.title = `Vote — ${data.name} | Sick Day with Ferris`;
+      }
       setLoading(false);
     });
-    return unsub;
+    return () => { unsub(); document.title = "Sick Day with Ferris — Set List Builder"; };
   }, [showId]);
 
   // Listen to songs
@@ -124,14 +128,14 @@ export default function VotePage({ showId }) {
       {/* Header */}
       <div style={{
         background: colors.bgHeader, borderBottom: `1px solid ${colors.borderMed}`,
-        padding: "16px 20px", textAlign: "center",
+        padding: "20px 20px 16px", textAlign: "center",
       }}>
-        <div style={{ fontSize: 11, color: colors.coral, fontWeight: "bold", letterSpacing: "0.15em", textTransform: "uppercase" }}>
+        <div style={{ fontSize: 22, color: colors.coral, fontWeight: "bold", letterSpacing: "0.05em" }}>
           Sick Day with Ferris
         </div>
-        <div style={{ fontSize: 18, color: colors.textPrimary, marginTop: 4 }}>{show.name}</div>
+        <div style={{ fontSize: 15, color: colors.textSecondary, marginTop: 6 }}>{show.name}</div>
         {(show.date || show.venue) && (
-          <div style={{ fontSize: 11, color: colors.textDim, marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: colors.textDim, marginTop: 3 }}>
             {[show.date, show.venue].filter(Boolean).join(" · ")}
           </div>
         )}

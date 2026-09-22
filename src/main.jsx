@@ -10,7 +10,7 @@ const style = document.createElement("style");
 style.textContent = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body, #root { height: 100%; width: 100%; overflow: hidden; }
-  body { background: #0e0e12; }
+  body { background: #1a1a2e; }
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 3px; }
