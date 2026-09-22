@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import { SongsProvider } from "./context/SongsContext.jsx";
 import VotePage from "./components/VotePage.jsx";
+import SetlistPage from "./components/SetlistPage.jsx";
 
 // Reset styles
 const style = document.createElement("style");
@@ -18,12 +19,16 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-const voteId = new URLSearchParams(window.location.search).get("vote");
+const params = new URLSearchParams(window.location.search);
+const voteId = params.get("vote");
+const setlistId = params.get("setlist");
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     {voteId ? (
       <VotePage showId={voteId} />
+    ) : setlistId ? (
+      <SetlistPage showId={setlistId} />
     ) : (
       <SongsProvider>
         <App />

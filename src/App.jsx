@@ -7,7 +7,7 @@ import { BAND_MEMBERS } from "./data/songs";
 import { useSongs } from "./context/SongsContext";
 import SongLibrary from "./components/SongLibrary";
 import SetlistBuilder, { calcTotalDuration } from "./components/SetlistBuilder";
-import PrintModal from "./components/PrintModal";
+import ShareModal from "./components/ShareModal";
 import GenerateModal from "./components/GenerateModal";
 import ShowSetlist from "./components/ShowSetlist";
 import VotePanel from "./components/VotePanel";
@@ -34,7 +34,7 @@ export default function App() {
   const [activeShowId, setActiveShowId] = useLocalStorage("sickday-active-show", null);
   const [viewMode, setViewMode] = useState("builder");
   const [memberName, setMemberName] = useLocalStorage("sickday-member", "");
-  const [printShow, setPrintShow] = useState(null);
+  const [shareShow, setShareShow] = useState(null);
   const [showGenerate, setShowGenerate] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [editingName, setEditingName] = useState(false);
@@ -317,7 +317,7 @@ export default function App() {
             borderRadius:3, cursor:"pointer",
           }}>Save as My Set</button>
 
-          <button onClick={() => setPrintShow(activeShow)} style={{
+          <button onClick={() => setShareShow(activeShow)} style={{
             padding:"4px 10px", fontSize:11, fontFamily:"inherit",
             background:colors.coral, border:"none", color: colors.onAccent,
             borderRadius:3, cursor:"pointer", fontWeight:"bold",
@@ -492,7 +492,7 @@ export default function App() {
                     background:"transparent", border:`1px solid ${colors.borderTeal}`, color:colors.teal,
                     borderRadius:4, cursor:"pointer",
                   }}>Save as My Set</button>
-                  <button onClick={() => setPrintShow(activeShow)} style={{
+                  <button onClick={() => setShareShow(activeShow)} style={{
                     flex:1, padding:"10px", fontSize:12, fontFamily:"inherit",
                     background:colors.coral, border:"none", color: colors.onAccent,
                     borderRadius:4, cursor:"pointer", fontWeight:"bold",
@@ -534,7 +534,7 @@ export default function App() {
           ))}
         </div>
 
-        <PrintModal show={printShow} onClose={() => setPrintShow(null)} onToast={showToast} />
+        <ShareModal show={shareShow} onClose={() => setShareShow(null)} onToast={showToast} />
         {showGenerate && (
           <GenerateModal
             currentSongIds={activeShow.songIds}
@@ -678,7 +678,7 @@ export default function App() {
         </div>
       </div>
 
-      <PrintModal show={printShow} onClose={() => setPrintShow(null)} onToast={showToast} />
+      <ShareModal show={shareShow} onClose={() => setShareShow(null)} onToast={showToast} />
       {showGenerate && (
         <GenerateModal
           currentSongIds={activeShow.songIds}

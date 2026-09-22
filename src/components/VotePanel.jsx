@@ -3,10 +3,11 @@ import { createPortal } from "react-dom";
 import { colors } from "../theme";
 
 const TIMER_OPTIONS = [
-  { label: "30 sec", value: 30 },
-  { label: "1 min",  value: 60 },
-  { label: "90 sec", value: 90 },
-  { label: "2 min",  value: 120 },
+  { label: "30s", value: 30 },
+  { label: "1m",  value: 60 },
+  { label: "90s", value: 90 },
+  { label: "2m",  value: 120 },
+  { label: "Custom", value: "custom" },
 ];
 
 function QRModal({ url, onClose }) {
@@ -54,6 +55,8 @@ function QRModal({ url, onClose }) {
 
 export default function VotePanel({ show, onOpen, onClose, onPause, onResume }) {
   const [timerSecs, setTimerSecs] = useState(60);
+  const [customMins, setCustomMins] = useState(3);
+  const [showCustom, setShowCustom] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
 
@@ -131,18 +134,44 @@ export default function VotePanel({ show, onOpen, onClose, onPause, onResume }) 
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <div style={{ fontSize: 11, color: colors.textMuted, flex: 1 }}>Let the crowd vote on the next song</div>
-          <div style={{ display: "flex", gap: 4 }}>
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
             {TIMER_OPTIONS.map(opt => (
-              <button key={opt.value} onClick={() => setTimerSecs(opt.value)} style={{
+              <button key={opt.value} onClick={() => {
+                if (opt.value === "custom") {
+                  setShowCustom(s => !s);
+                } else {
+                  setTimerSecs(opt.value);
+                  setShowCustom(false);
+                }
+              }} style={{
                 padding: "4px 8px", fontSize: 11, fontFamily: "inherit",
-                background: timerSecs === opt.value ? colors.bgInput : "transparent",
-                border: `1px solid ${timerSecs === opt.value ? colors.coral : colors.borderMed}`,
-                color: timerSecs === opt.value ? colors.coral : colors.textDim,
+                background: (opt.value === "custom" ? showCustom : timerSecs === opt.value && !showCustom) ? colors.bgInput : "transparent",
+                border: `1px solid ${(opt.value === "custom" ? showCustom : timerSecs === opt.value && !showCustom) ? colors.coral : colors.borderMed}`,
+                color: (opt.value === "custom" ? showCustom : timerSecs === opt.value && !showCustom) ? colors.coral : colors.textDim,
                 borderRadius: 3, cursor: "pointer",
               }}>{opt.label}</button>
             ))}
+            {showCustom && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <input
+                  type="number" min={1} max={60}
+                  value={customMins}
+                  onChange={e => {
+                    const v = Math.max(1, Math.min(60, Number(e.target.value)));
+                    setCustomMins(v);
+                    setTimerSecs(v * 60);
+                  }}
+                  style={{
+                    width: 44, padding: "3px 6px", fontSize: 11,
+                    background: colors.bgInput, border: `1px solid ${colors.coral}`,
+                    color: colors.textPrimary, borderRadius: 3, fontFamily: "inherit",
+                  }}
+                />
+                <span style={{ fontSize: 11, color: colors.textDim }}>min</span>
+              </div>
+            )}
           </div>
-          <button onClick={() => { onOpen(timerSecs); setShowQR(true); }} style={{
+          <button onClick={() => { onOpen(showCustom ? customMins * 60 : timerSecs); setShowQR(true); }} style={{
             padding: "8px 14px", background: colors.teal, border: "none",
             color: colors.onAccent, borderRadius: 4, cursor: "pointer",
             fontSize: 12, fontFamily: "inherit", fontWeight: "bold",
