@@ -14,6 +14,7 @@ import VotePanel from "./components/VotePanel";
 import SongAdmin from "./components/SongAdmin";
 import { Toast, ConfirmDialog } from "./components/Toast";
 import { downloadPrompterSet } from "./lib/prompterExport";
+import { openChartsPage } from "./lib/chartsPage";
 
 const DEFAULT_SHOW = () => ({
   id: crypto.randomUUID(),
@@ -336,6 +337,21 @@ export default function App() {
               opacity: activeShow.songIds.length === 0 ? 0.5 : 1,
             }}
           >↓ Prompter file</button>
+
+          <button
+            onClick={() => {
+              if (activeShow.songIds.length === 0) return;
+              const { opened } = openChartsPage(activeShow, songs);
+              if (!opened) showToast("Pop-up blocked — allow pop-ups to print charts");
+            }}
+            disabled={activeShow.songIds.length === 0}
+            style={{
+              padding:"4px 10px", fontSize:12, fontFamily:"inherit",
+              background:"transparent", border:`1px solid ${colors.borderMed}`, color:colors.textMuted,
+              borderRadius:3, cursor: activeShow.songIds.length === 0 ? "default" : "pointer",
+              opacity: activeShow.songIds.length === 0 ? 0.5 : 1,
+            }}
+          >🖨 Print charts</button>
 
           <button onClick={() => deleteShow(activeShow.id)} style={{
             padding:"4px 8px", fontSize:11,

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SDWF Set List Charts</title>
+<style>
+:root{--bg:#f6f5f0;--card:#fff;--ink:#262019;--mute:#6b6557;--line:#e8e3d6;--coral:#cf4234;--teal:#0d8f83;--chord:#b23b30;--sec:#2f6f61;--secbg:#e6f6f2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header.top{background:#fff;border-bottom:1px solid var(--line);padding:20px 16px;text-align:center}
+header.top .band{letter-spacing:.2em;text-transform:uppercase;font-size:12px;color:var(--mute)}
+header.top h1{margin:4px 0;font-size:28px}
+header.top .meta{color:var(--mute);font-size:14px}
+.bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.bar button,.bar label{padding:8px 14px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;font:inherit;font-size:13px}
+.bar .primary{background:var(--coral);border-color:var(--coral);color:#fff;font-weight:600}
+.bar .on{background:var(--secbg);border-color:var(--teal)}
+main{max-width:860px;margin:0 auto;padding:16px}
+nav.toc{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:16px}
+nav.toc h2{margin:0 0 6px;font-size:13px;letter-spacing:.15em;text-transform:uppercase;color:var(--mute)}
+nav.toc ol{margin:0;padding:0;list-style:none;columns:2 280px}
+nav.toc li{break-inside:avoid;display:flex;gap:8px;padding:3px 0;font-size:14px}
+nav.toc a{color:inherit;text-decoration:none;flex:1}
+nav.toc a:hover{color:var(--coral)}
+nav.toc .n{color:#6a6291;font-variant-numeric:tabular-nums;min-width:22px;text-align:right}
+nav.toc .k{color:var(--mute);font-size:12px;white-space:nowrap}
+article.song{background:var(--card);border:1px solid var(--line);border-radius:8px;margin-bottom:16px;overflow:hidden}
+.sh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:flex-start}
+.sh .num{font-size:28px;font-weight:700;color:#6a6291;line-height:1;min-width:38px;font-variant-numeric:tabular-nums}
+.sh h3{margin:0;font-size:22px;line-height:1.2}
+.sh .artist{color:var(--mute);font-size:14px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;background:#f2efe6;border:1px solid var(--line)}
+.chip.key{background:var(--secbg);border-color:#9bd6cb;color:var(--sec)}
+.note{margin:0;padding:8px 18px;background:#fdf3de;border-bottom:1px solid #e0bd6e;font-size:13px;color:#6b4a07}
+.chart{padding:6px 18px 16px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px}
+.sec{margin:14px 0 4px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.sec b{background:var(--secbg);color:var(--sec);border-left:3px solid var(--teal);padding:1px 10px;font-size:12px;letter-spacing:.08em}
+.sec i{color:var(--mute);font-style:normal;font-size:13px}
+.ln{display:flex;flex-wrap:wrap;align-items:flex-end;min-height:1.5em}
+.seg{display:inline-flex;flex-direction:column}
+.seg .c{color:var(--chord);font-weight:700;height:1.4em;white-space:pre;padding-right:.4em}
+.seg .t{white-space:pre}
+.gap{height:.5em}
+body.nochords .seg .c{display:none}
+body.nochords .ln.chordonly{display:none}
+@media print{
+ body{background:#fff;font-size:12px}
+ header.top .bar,nav.toc{display:none}
+ header.top{border:0;padding:0 0 10px}
+ article.song{border:0;border-radius:0;break-after:page;margin:0}
+ article.song:last-of-type{break-after:auto}
+ .chart{font-size:12px}
+ .sec b{background:none;border-left:3px solid #000;color:#000}
+ .seg .c{color:#000}
+ .note{background:none;border-color:#000;color:#000}
+}
+</style></head><body>
+<header class="top">
+ <div class="band">Sick Day with Ferris</div>
+ <h1 id="title"></h1><div class="meta" id="meta"></div>
+ <div class="bar">
+  <button class="primary" onclick="window.print()">Print all charts</button>
+  <button id="tg" class="on" onclick="toggleChords()">Chords: on</button>
+  <label>Load prompter JSON<input type="file" id="f" accept=".json" hidden></label>
+ </div>
+</header>
+<main><nav class="toc"><h2>Set list</h2><ol id="toc"></ol></nav><div id="songs"></div></main>
+<script>
+let DATA = /*__DATA__*/null;
+const CH=/^[A-G][#b]?(maj|min|m|dim|aug|sus|add|M)?\d*(sus\d|add\d|[#b]\d+)*(\/[A-G][#b]?)?$/;
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function parseLine(l){ // -> [{c,t}]
+  const segs=[];let re=/\[([^\]]*)\]/g,last=0,m,cur={c:'',t:''};
+  while((m=re.exec(l))){ cur.t+=l.slice(last,m.index); if(cur.t||cur.c) segs.push(cur); cur={c:m[1],t:''}; last=re.lastIndex;}
+  cur.t+=l.slice(last); segs.push(cur); return segs;
+}
+function renderChart(chart,note){
+  const lines=chart.split('\n').slice(1); if(note&&lines[0]===note)lines.shift(); // header + note shown separately
+  let h='';
+  for(const raw of lines){
+    const l=raw.replace(/\s+$/,'');
+    if(!l.trim()){h+='<div class="gap"></div>';continue}
+    const sm=l.match(/^\[([^\]]+)\]\s*(?:\((.*)\))?\s*$/);
+    if(sm&&!CH.test(sm[1])){h+=`<div class="sec"><b>${esc(sm[1])}</b>${sm[2]?`<i>${esc(sm[2])}</i>`:''}</div>`;continue}
+    const segs=parseLine(l), chordOnly=segs.every(s=>!s.t.trim());
+    h+=`<div class="ln${chordOnly?' chordonly':''}">`+segs.map(s=>`<span class="seg"><span class="c">${esc(s.c)||'&nbsp;'}</span><span class="t">${esc(s.t)||(s.c?' ':'')}</span></span>`).join('')+'</div>';
+  }
+  return h;
+}
+function render(){
+  document.getElementById('title').textContent=DATA.show.name;
+  document.getElementById('meta').textContent=[DATA.show.date,DATA.show.venue,DATA.songs.length+' songs'].filter(Boolean).join(' · ');
+  document.getElementById('toc').innerHTML=DATA.songs.map((s,i)=>`<li><span class="n">${i+1}</span><a href="#s${i}">${esc(s.title)}</a><span class="k">${esc(s.key)} · ${s.bpm}</span></li>`).join('');
+  document.getElementById('songs').innerHTML=DATA.songs.map((s,i)=>{
+    const L=(s.chart||'').split('\n'); const hasNote=s.note&&L[1]===s.note;
+    return `<article class="song" id="s${i}"><div class="sh"><div class="num">${String(i+1).padStart(2,'0')}</div><div><h3>${esc(s.title)}</h3><div class="artist">${esc(s.artist)}</div>
+    <div class="chips"><span class="chip key">Key ${esc(s.key)}</span><span class="chip">${s.bpm} BPM</span>${s.capo?`<span class="chip">Capo ${s.capo}</span>`:''}</div></div></div>
+    ${s.note?`<p class="note">${esc(s.note)}</p>`:''}<div class="chart">${s.chart?renderChart(s.chart,s.note):'<i>No chart yet</i>'}</div></article>`}).join('');
+}
+function toggleChords(){const on=document.body.classList.toggle('nochords');const b=document.getElementById('tg');b.textContent='Chords: '+(on?'off':'on');b.classList.toggle('on',!on)}
+document.getElementById('f').onchange=e=>{const r=new FileReader();r.onload=()=>{DATA=JSON.parse(r.result);render()};r.readAsText(e.target.files[0])};
+render();
+</script></body></html>
