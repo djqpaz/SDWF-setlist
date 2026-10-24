@@ -3,7 +3,6 @@ import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc } from "fireb
 import { db } from "./firebase";
 import { colors } from "./theme";
 import { useLocalStorage } from "./hooks/useLocalStorage";
-import { BAND_MEMBERS } from "./data/songs";
 import { useSongs } from "./context/SongsContext";
 import SongLibrary from "./components/SongLibrary";
 import SetlistBuilder, { calcTotalDuration } from "./components/SetlistBuilder";
@@ -13,7 +12,8 @@ import ShowSetlist from "./components/ShowSetlist";
 import VotePanel from "./components/VotePanel";
 import SongAdmin from "./components/SongAdmin";
 import { Toast, ConfirmDialog } from "./components/Toast";
-import { downloadPrompterSet } from "./lib/prompterExport";
+
+const BASE_URL = `${window.location.origin}${window.location.pathname}`;
 
 const DEFAULT_SHOW = () => ({
   id: crypto.randomUUID(),
@@ -21,7 +21,7 @@ const DEFAULT_SHOW = () => ({
   date: "",
   venue: "",
   songIds: [],
-  suggestions: [],
+  votingEnabled: false,
   createdAt: new Date().toISOString(),
 });
 
@@ -31,13 +31,11 @@ export default function App() {
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeShowId, setActiveShowId] = useLocalStorage("sickday-active-show", null);
-  const [viewMode, setViewMode] = useState("builder");
-  const [memberName, setMemberName] = useLocalStorage("sickday-member", "");
   const [shareShow, setShareShow] = useState(null);
   const [showGenerate, setShowGenerate] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [libraryOpen, setLibraryOpen] = useLocalStorage("sickday-library-open", false);
   const [editingName, setEditingName] = useState(false);
-  const [mobileTab, setMobileTab] = useState("library");
+  const [mobileTab, setMobileTab] = useState("setlist");
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
   const [toast, setToast] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
@@ -120,19 +118,8 @@ export default function App() {
     }
   }
 
-  function saveSuggestion() {
-    if (!memberName) return showToast("Pick your name first", "error");
-    if (activeShow.songIds.length === 0) return showToast("Add some songs first!", "error");
-    const existing = activeShow.suggestions || [];
-    const filtered = existing.filter(s => s.member !== memberName);
-    updateShow(activeShow.id, {
-      suggestions: [...filtered, {
-        member: memberName,
-        songIds: [...activeShow.songIds],
-        savedAt: new Date().toISOString(),
-      }]
-    });
-    showToast(`Saved as ${memberName}'s suggestion ✓`);
+  function toggleVoting() {
+    updateShow(activeShow.id, { votingEnabled: !activeShow.votingEnabled });
   }
 
   // ── Voting ─────────────────────────────────────────────────────────────
@@ -196,7 +183,7 @@ export default function App() {
     updateShow(activeShow.id, { playedSongIds: newPlayed });
   }
 
-  // Auto-close voting when timer expires (skip when paused)
+  // Auto-close voting when timer expires
   useEffect(() => {
     if (!voting.active || !voting.endsAt || voting.paused) return;
     const remaining = voting.endsAt - Date.now();
@@ -205,29 +192,19 @@ export default function App() {
     return () => clearTimeout(t);
   }, [voting.active, voting.endsAt, voting.paused]);
 
-  function loadSuggestion(suggestion) {
-    showConfirm(`Load ${suggestion.member}'s set? This will replace the current set list.`, () => {
-      updateShow(activeShow.id, { songIds: [...suggestion.songIds] });
-      setViewMode("builder");
-      if (isMobile) setMobileTab("setlist");
-      showToast(`Loaded ${suggestion.member}'s set ✓`);
-    });
-  }
-
   function fmtDuration(secs) {
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
-    const s = secs % 60;
     if (h > 0) return `${h}h ${m}m`;
-    return `${m}m ${String(s).padStart(2,"0")}s`;
+    return `${m}m`;
   }
   const totalDuration = calcTotalDuration(activeShow?.songIds || [], songMap);
 
   if (loading) return (
     <div style={{
-      height:"100dvh", background: colors.bgPage, display:"flex",
-      alignItems:"center", justifyContent:"center",
-      color:colors.teal, fontFamily:"'Georgia', serif", fontSize:14, letterSpacing:"0.1em",
+      height: "100dvh", background: colors.bgPage, display: "flex",
+      alignItems: "center", justifyContent: "center",
+      color: colors.teal, fontFamily: "'Georgia', serif", fontSize: 14, letterSpacing: "0.1em",
     }}>
       Loading…
     </div>
@@ -235,13 +212,13 @@ export default function App() {
 
   if (!activeShow) return null;
 
-  // ── Shared sub-components ──────────────────────────────────────────────
+  // ── Shared meta bar ────────────────────────────────────────────────────
 
   const metaBar = (
     <div style={{
-      display:"flex", alignItems:"center", gap:8, padding:"8px 16px",
-      borderBottom:`1px solid ${colors.borderLight}`, background:colors.bgPanel, flexShrink:0,
-      flexWrap:"wrap",
+      display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
+      borderBottom: `1px solid ${colors.borderLight}`, background: colors.bgPanel, flexShrink: 0,
+      flexWrap: "wrap",
     }}>
       {editingName ? (
         <input
@@ -251,19 +228,21 @@ export default function App() {
           onBlur={() => setEditingName(false)}
           onKeyDown={e => e.key === "Enter" && setEditingName(false)}
           style={{
-            background:colors.bgInput, border:`1px solid ${colors.coral}`, color:colors.textPrimary,
-            padding:"4px 8px", borderRadius:3, fontSize:14, fontFamily:"inherit",
-            outline:"none", flex:1, minWidth:120,
+            background: colors.bgInput, border: `1px solid ${colors.coral}`, color: colors.textPrimary,
+            padding: "4px 8px", borderRadius: 3, fontSize: 14, fontFamily: "inherit",
+            outline: "none", flex: 1, minWidth: 120,
           }}
         />
       ) : (
         <div
           onClick={() => setEditingName(true)}
-          style={{ fontSize:14, color:colors.textPrimary, cursor:"text", padding:"4px 0", flex:1, minWidth:0,
-            whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}
+          style={{
+            fontSize: 14, color: colors.textPrimary, cursor: "text", padding: "4px 0",
+            flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          }}
           title="Click to rename"
         >
-          {activeShow.name} <span style={{ color:colors.textDim, fontSize:11 }}>✎</span>
+          {activeShow.name} <span style={{ color: colors.textDim, fontSize: 11 }}>✎</span>
         </div>
       )}
 
@@ -273,9 +252,8 @@ export default function App() {
         placeholder="Date"
         type="date"
         style={{
-          background:colors.bgInput, border:`1px solid ${colors.borderMed}`, color:colors.textMuted,
-          padding:"4px 8px", borderRadius:3, fontSize:12, fontFamily:"inherit",
-          outline:"none",
+          background: colors.bgInput, border: `1px solid ${colors.borderMed}`, color: colors.textMuted,
+          padding: "4px 8px", borderRadius: 3, fontSize: 12, fontFamily: "inherit", outline: "none",
         }}
       />
 
@@ -284,77 +262,57 @@ export default function App() {
         onChange={e => updateShow(activeShow.id, { venue: e.target.value })}
         placeholder="Venue"
         style={{
-          background:colors.bgInput, border:`1px solid ${colors.borderMed}`, color:colors.textMuted,
-          padding:"4px 8px", borderRadius:3, fontSize:12, fontFamily:"inherit",
-          outline:"none", width:130,
+          background: colors.bgInput, border: `1px solid ${colors.borderMed}`, color: colors.textMuted,
+          padding: "4px 8px", borderRadius: 3, fontSize: 12, fontFamily: "inherit", outline: "none", width: 130,
         }}
       />
 
       {!isMobile && (
-        <div style={{ marginLeft:"auto", display:"flex", gap:6, alignItems:"center" }}>
-          <span style={{ fontSize:11, color:colors.textMuted }}>{activeShow.songIds.length} songs</span>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
+          <span style={{ fontSize: 11, color: colors.textMuted }}>{activeShow.songIds.length} songs</span>
 
           <button onClick={() => setShowGenerate(true)} style={{
-            padding:"4px 10px", fontSize:11, fontFamily:"inherit",
-            background:"transparent", border:`1px solid ${colors.borderTeal}`, color:colors.teal,
-            borderRadius:3, cursor:"pointer",
+            padding: "4px 10px", fontSize: 11, fontFamily: "inherit",
+            background: "transparent", border: `1px solid ${colors.borderTeal}`, color: colors.teal,
+            borderRadius: 3, cursor: "pointer",
           }}>Generate Set</button>
 
-
-          <button onClick={() => setViewMode(v => v === "builder" ? "suggestions" : "builder")} style={{
-            padding:"4px 10px", fontSize:11, fontFamily:"inherit",
-            background: viewMode === "suggestions" ? colors.bgInput : "transparent",
-            border:`1px solid ${colors.borderMed}`, color: viewMode === "suggestions" ? colors.coral : colors.textDim,
-            borderRadius:3, cursor:"pointer",
-          }}>
-            Suggestions {activeShow.suggestions?.length > 0 && `(${activeShow.suggestions.length})`}
-          </button>
-
-          <button onClick={saveSuggestion} style={{
-            padding:"4px 10px", fontSize:11, fontFamily:"inherit",
-            background:"transparent", border:`1px solid ${colors.borderTeal}`, color:colors.teal,
-            borderRadius:3, cursor:"pointer",
-          }}>Save as My Set</button>
-
           <button onClick={() => setShareShow(activeShow)} style={{
-            padding:"4px 10px", fontSize:11, fontFamily:"inherit",
-            background:colors.coral, border:"none", color: colors.onAccent,
-            borderRadius:3, cursor:"pointer", fontWeight:"bold",
+            padding: "4px 10px", fontSize: 11, fontFamily: "inherit",
+            background: colors.coral, border: "none", color: colors.onAccent,
+            borderRadius: 3, cursor: "pointer", fontWeight: "bold",
           }}>Export</button>
 
-          <button
-            onClick={() => {
-              if (activeShow.songIds.length === 0) return;
-              const n = downloadPrompterSet(activeShow, songs);
-              showToast(`Exported ${n} songs for the prompter`);
-            }}
-            disabled={activeShow.songIds.length === 0}
-            style={{
-              padding:"4px 10px", fontSize:12, fontFamily:"inherit",
-              background:"transparent", border:`1px solid ${colors.borderMed}`, color:colors.textMuted,
-              borderRadius:3, cursor: activeShow.songIds.length === 0 ? "default" : "pointer",
-              opacity: activeShow.songIds.length === 0 ? 0.5 : 1,
-            }}
-          >↓ Prompter file</button>
-
           <a
-            href={activeShow.songIds.length > 0 ? `${window.location.origin}${window.location.pathname}?charts=${activeShow.id}` : undefined}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={activeShow.songIds.length > 0 ? `${BASE_URL}?prompter=${activeShow.id}` : undefined}
+            target="_blank" rel="noopener noreferrer"
             onClick={e => activeShow.songIds.length === 0 && e.preventDefault()}
             style={{
-              padding:"4px 10px", fontSize:12, fontFamily:"inherit",
-              background:"transparent", border:`1px solid ${colors.borderMed}`, color:colors.textMuted,
-              borderRadius:3, cursor: activeShow.songIds.length === 0 ? "default" : "pointer",
+              padding: "4px 10px", fontSize: 11, fontFamily: "inherit",
+              background: "transparent", border: `1px solid ${colors.borderMed}`, color: colors.textMuted,
+              borderRadius: 3, cursor: activeShow.songIds.length === 0 ? "default" : "pointer",
               opacity: activeShow.songIds.length === 0 ? 0.5 : 1,
-              textDecoration:"none", display:"inline-block",
+              textDecoration: "none", display: "inline-block",
+            }}
+          >Prompter ↗</a>
+
+          <a
+            href={activeShow.songIds.length > 0 ? `${BASE_URL}?charts=${activeShow.id}` : undefined}
+            target="_blank" rel="noopener noreferrer"
+            onClick={e => activeShow.songIds.length === 0 && e.preventDefault()}
+            style={{
+              padding: "4px 10px", fontSize: 11, fontFamily: "inherit",
+              background: "transparent", border: `1px solid ${colors.borderMed}`, color: colors.textMuted,
+              borderRadius: 3, cursor: activeShow.songIds.length === 0 ? "default" : "pointer",
+              opacity: activeShow.songIds.length === 0 ? 0.5 : 1,
+              textDecoration: "none", display: "inline-block",
             }}
           >🖨 Print charts</a>
 
           <button onClick={() => deleteShow(activeShow.id)} style={{
-            padding:"4px 8px", fontSize:11,
-            background:"transparent", border:`1px solid ${colors.borderRed}`, color:colors.danger,
-            borderRadius:3, cursor:"pointer", fontFamily:"inherit",
+            padding: "4px 8px", fontSize: 11,
+            background: "transparent", border: `1px solid ${colors.borderRed}`, color: colors.danger,
+            borderRadius: 3, cursor: "pointer", fontFamily: "inherit",
           }}>Delete Show</button>
         </div>
       )}
@@ -364,169 +322,121 @@ export default function App() {
   // ── Mobile layout ──────────────────────────────────────────────────────
 
   if (isMobile) {
-    const suggestionCount = activeShow.suggestions?.length || 0;
-
     return (
       <div style={{
-        display:"flex", flexDirection:"column", height:"100dvh",
-        background: colors.bgPage, color:colors.textPrimary,
-        fontFamily:"'Georgia', serif", overflow:"hidden",
+        display: "flex", flexDirection: "column", height: "100dvh",
+        background: colors.bgPage, color: colors.textPrimary,
+        fontFamily: "'Georgia', serif", overflow: "hidden",
       }}>
         {/* Top bar */}
         <div style={{
-          display:"flex", alignItems:"center", gap:8,
-          padding:"0 12px", height:48,
-          borderBottom:`1px solid ${colors.borderMed}`, flexShrink:0,
-          background:colors.bgHeader,
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "0 12px", height: 48,
+          borderBottom: `1px solid ${colors.borderMed}`, flexShrink: 0,
+          background: colors.bgHeader,
         }}>
-          <div style={{ fontSize:12, color:colors.coral, fontWeight:"bold", letterSpacing:"0.1em" }}>
+          <div style={{ fontSize: 12, color: colors.coral, fontWeight: "bold", letterSpacing: "0.1em" }}>
             SDWF
           </div>
-
-          {/* Show tabs */}
-          <div style={{ display:"flex", gap:2, flex:1, overflow:"auto", minWidth:0 }}>
+          <div style={{ display: "flex", gap: 2, flex: 1, overflow: "auto", minWidth: 0 }}>
             {shows.map(show => (
               <button key={show.id} onClick={() => setActiveShowId(show.id)} style={{
-                padding:"4px 10px", borderRadius:"3px 3px 0 0", fontSize:11,
-                border:"1px solid",
-                borderBottom: activeShowId === show.id ? `1px solid ${colors.bgHeader}` : `1px solid ${colors.borderMed}`,
+                padding: "4px 10px", borderRadius: "3px 3px 0 0", fontSize: 11,
+                border: "1px solid",
                 borderColor: activeShowId === show.id ? `${colors.borderMed} ${colors.borderMed} ${colors.bgHeader} ${colors.borderMed}` : colors.borderMed,
                 background: activeShowId === show.id ? colors.bgHeader : "transparent",
                 color: activeShowId === show.id ? colors.textPrimary : colors.textFaint,
-                cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap",
+                cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
               }}>{show.name}</button>
             ))}
             <button onClick={addShow} style={{
-              padding:"4px 8px", background:"transparent",
-              border:`1px solid ${colors.borderMed}`, borderBottom:`1px solid ${colors.borderMed}`,
-              color:colors.textDim, cursor:"pointer", fontSize:16, borderRadius:"3px 3px 0 0", lineHeight:1,
+              padding: "4px 8px", background: "transparent",
+              border: `1px solid ${colors.borderMed}`,
+              color: colors.textDim, cursor: "pointer", fontSize: 16, borderRadius: "3px 3px 0 0", lineHeight: 1,
             }}>+</button>
           </div>
-
-          <select
-            value={memberName}
-            onChange={e => setMemberName(e.target.value)}
-            style={{
-              background:colors.bgInput, border:`1px solid ${colors.borderMed}`,
-              color: memberName ? colors.coral : colors.textFaint,
-              padding:"4px 6px", borderRadius:3, fontSize:11, fontFamily:"inherit",
-              cursor:"pointer", outline:"none", maxWidth:100,
-            }}
-          >
-            <option value="">Who?</option>
-            {BAND_MEMBERS.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-
           <button onClick={() => setShowAdmin(true)} style={{
-            background:"transparent", border:`1px solid ${colors.borderTeal}`, color:colors.teal,
-            borderRadius:3, padding:"4px 8px", fontSize:13, cursor:"pointer", fontFamily:"inherit",
+            background: "transparent", border: `1px solid ${colors.borderTeal}`, color: colors.teal,
+            borderRadius: 3, padding: "4px 8px", fontSize: 13, cursor: "pointer", fontFamily: "inherit",
           }}>⚙</button>
         </div>
 
-        {/* Meta bar */}
         {metaBar}
 
         {/* Tab content */}
-        <div style={{ flex:1, overflow:"hidden", display:"flex", flexDirection:"column" }}>
+        <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
 
-          {/* LIBRARY TAB */}
           {mobileTab === "library" && (
-            <div style={{ flex:1, overflow:"hidden", display:"flex", flexDirection:"column" }}>
-              {/* Generate Set button */}
+            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
               <button onClick={() => setShowGenerate(true)} style={{
-                margin:"10px 12px 4px", padding:"10px",
-                background:"transparent", border:`1px solid ${colors.borderTeal}`, color:colors.teal,
-                borderRadius:4, cursor:"pointer", fontSize:13, fontFamily:"inherit",
-                fontWeight:"bold", letterSpacing:"0.05em",
-              }}>
-                ✦ Generate Set
-              </button>
-              <div style={{
-                padding:"4px 16px 6px", fontSize:9, color:colors.textDim,
-                letterSpacing:"0.2em", textTransform:"uppercase",
-              }}>
+                margin: "10px 12px 4px", padding: "10px",
+                background: "transparent", border: `1px solid ${colors.borderTeal}`, color: colors.teal,
+                borderRadius: 4, cursor: "pointer", fontSize: 13, fontFamily: "inherit",
+                fontWeight: "bold", letterSpacing: "0.05em",
+              }}>✦ Generate Set</button>
+              <div style={{ padding: "4px 16px 6px", fontSize: 9, color: colors.textDim, letterSpacing: "0.2em", textTransform: "uppercase" }}>
                 Song Library — {activeShow.songIds.length} in set
               </div>
-              <div style={{ flex:1, overflow:"hidden" }}>
+              <div style={{ flex: 1, overflow: "hidden" }}>
                 <SongLibrary setlistSongIds={activeShow.songIds} onAdd={addSong} onAddAll={addAllSongs} />
               </div>
             </div>
           )}
 
-          {/* SET LIST TAB */}
           {mobileTab === "setlist" && (
-            <div style={{ flex:1, overflow:"hidden", display:"flex", flexDirection:"column" }}>
+            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
               <div style={{
-                padding:"10px 16px 6px", fontSize:9, color:colors.textDim,
-                letterSpacing:"0.2em", textTransform:"uppercase", flexShrink:0,
-                borderBottom:`1px solid ${colors.borderLight}`,
-                display:"flex", justifyContent:"space-between", alignItems:"center",
+                padding: "10px 16px 6px", fontSize: 9, color: colors.textDim,
+                letterSpacing: "0.2em", textTransform: "uppercase", flexShrink: 0,
+                borderBottom: `1px solid ${colors.borderLight}`,
+                display: "flex", justifyContent: "space-between", alignItems: "center",
               }}>
                 <span>Set List — {activeShow.songIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}</span>
-                {!isShowMode && <span style={{ color:colors.textFaint, fontSize:9 }}>drag to reorder</span>}
+                <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer", fontSize: 9, color: colors.textMuted }}>
+                  <input type="checkbox" checked={!!activeShow.votingEnabled} onChange={toggleVoting} style={{ cursor: "pointer" }} />
+                  Crowd voting
+                </label>
               </div>
-              <VotePanel show={activeShow} onOpen={openVoting} onClose={closeVoting} onPause={pauseVoting} onResume={resumeVoting} />
-              <div style={{ flex:1, overflowY:"auto" }}>
+              {activeShow.votingEnabled && (
+                <VotePanel show={activeShow} onOpen={openVoting} onClose={closeVoting} onPause={pauseVoting} onResume={resumeVoting} />
+              )}
+              <div style={{ flex: 1, overflowY: "auto" }}>
                 {isShowMode
-                  ? <ShowSetlist
-                      songIds={activeShow.songIds}
-                      playedSongIds={playedSongIds}
-                      voting={voting}
-                      songMap={songMap}
-                      onMarkPlayed={markPlayed}
-                      onUndoPlayed={undoPlayed}
-                    />
+                  ? <ShowSetlist songIds={activeShow.songIds} playedSongIds={playedSongIds} voting={voting} songMap={songMap} onMarkPlayed={markPlayed} onUndoPlayed={undoPlayed} />
                   : <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} />
                 }
               </div>
-              {/* Action footer — only in builder mode */}
               {!isShowMode && (
                 <div style={{
-                  display:"flex", gap:8, padding:"10px 12px",
-                  borderTop:`1px solid ${colors.borderLight}`, background:colors.bgPanel, flexShrink:0,
+                  display: "flex", gap: 8, padding: "10px 12px",
+                  borderTop: `1px solid ${colors.borderLight}`, background: colors.bgPanel, flexShrink: 0,
                 }}>
-                  <button onClick={saveSuggestion} style={{
-                    flex:1, padding:"10px", fontSize:12, fontFamily:"inherit",
-                    background:"transparent", border:`1px solid ${colors.borderTeal}`, color:colors.teal,
-                    borderRadius:4, cursor:"pointer",
-                  }}>Save as My Set</button>
                   <button onClick={() => setShareShow(activeShow)} style={{
-                    flex:1, padding:"10px", fontSize:12, fontFamily:"inherit",
-                    background:colors.coral, border:"none", color: colors.onAccent,
-                    borderRadius:4, cursor:"pointer", fontWeight:"bold",
+                    flex: 1, padding: "10px", fontSize: 12, fontFamily: "inherit",
+                    background: colors.coral, border: "none", color: colors.onAccent,
+                    borderRadius: 4, cursor: "pointer", fontWeight: "bold",
                   }}>Export</button>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* SUGGESTIONS TAB */}
-          {mobileTab === "suggestions" && (
-            <div style={{ flex:1, overflowY:"auto", display:"flex", flexDirection:"column" }}>
-              <SuggestionsPanel
-                suggestions={activeShow.suggestions || []}
-                onLoad={loadSuggestion}
-              />
             </div>
           )}
         </div>
 
         {/* Bottom tab bar */}
         <div style={{
-          display:"flex", borderTop:`1px solid ${colors.borderMed}`,
-          background:colors.bgHeader, flexShrink:0,
-          paddingBottom:"env(safe-area-inset-bottom, 0px)",
+          display: "flex", borderTop: `1px solid ${colors.borderMed}`,
+          background: colors.bgHeader, flexShrink: 0,
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}>
           {[
-            { id:"library", label:"Library" },
-            { id:"setlist", label:`Set List${activeShow.songIds.length > 0 ? ` (${activeShow.songIds.length})` : ""}` },
-            { id:"suggestions", label:`Suggestions${suggestionCount > 0 ? ` (${suggestionCount})` : ""}` },
+            { id: "library", label: "Library" },
+            { id: "setlist", label: `Set List${activeShow.songIds.length > 0 ? ` (${activeShow.songIds.length})` : ""}` },
           ].map(tab => (
             <button key={tab.id} onClick={() => setMobileTab(tab.id)} style={{
-              flex:1, padding:"12px 4px", border:"none",
+              flex: 1, padding: "12px 4px", border: "none",
               background: mobileTab === tab.id ? colors.bgInput : "transparent",
               color: mobileTab === tab.id ? colors.coral : colors.textDim,
-              fontFamily:"inherit", fontSize:11, cursor:"pointer",
+              fontFamily: "inherit", fontSize: 11, cursor: "pointer",
               borderTop: mobileTab === tab.id ? `2px solid ${colors.coral}` : "2px solid transparent",
             }}>{tab.label}</button>
           ))}
@@ -557,132 +467,117 @@ export default function App() {
 
   return (
     <div style={{
-      display:"flex", flexDirection:"column", height:"100vh",
-      background: colors.bgPage, color:colors.textPrimary,
-      fontFamily:"'Georgia', serif", overflow:"hidden",
+      display: "flex", flexDirection: "column", height: "100vh",
+      background: colors.bgPage, color: colors.textPrimary,
+      fontFamily: "'Georgia', serif", overflow: "hidden",
     }}>
       {/* Top bar */}
       <div style={{
-        display:"flex", alignItems:"center", gap:12,
-        padding:"0 16px", height:52,
-        borderBottom:`1px solid ${colors.borderMed}`, flexShrink:0,
-        background:colors.bgHeader,
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "0 16px", height: 52,
+        borderBottom: `1px solid ${colors.borderMed}`, flexShrink: 0,
+        background: colors.bgHeader,
       }}>
-        <div style={{ fontSize:12, color:colors.coral, fontWeight:"bold", letterSpacing:"0.1em", marginRight:4 }}>
+        <div style={{ fontSize: 12, color: colors.coral, fontWeight: "bold", letterSpacing: "0.1em", marginRight: 4 }}>
           SDWF
         </div>
-
-        <div style={{ display:"flex", gap:2, flex:1, overflow:"auto", minWidth:0 }}>
+        <div style={{ display: "flex", gap: 2, flex: 1, overflow: "auto", minWidth: 0 }}>
           {shows.map(show => (
             <button key={show.id} onClick={() => setActiveShowId(show.id)} style={{
-              padding:"5px 12px", borderRadius:"3px 3px 0 0", fontSize:12,
-              border:"1px solid",
-              borderBottom: activeShowId === show.id ? `1px solid ${colors.bgHeader}` : `1px solid ${colors.borderMed}`,
+              padding: "5px 12px", borderRadius: "3px 3px 0 0", fontSize: 12,
+              border: "1px solid",
               borderColor: activeShowId === show.id ? `${colors.borderMed} ${colors.borderMed} ${colors.bgHeader} ${colors.borderMed}` : colors.borderMed,
               background: activeShowId === show.id ? colors.bgHeader : "transparent",
               color: activeShowId === show.id ? colors.textPrimary : colors.textFaint,
-              cursor:"pointer", fontFamily:"inherit", whiteSpace:"nowrap",
+              cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
             }}>{show.name}</button>
           ))}
           <button onClick={addShow} style={{
-            padding:"5px 10px", background:"transparent",
-            border:`1px solid ${colors.borderMed}`, borderBottom:`1px solid ${colors.borderMed}`,
-            color:colors.textDim, cursor:"pointer", fontSize:16, borderRadius:"3px 3px 0 0", lineHeight:1,
+            padding: "5px 10px", background: "transparent",
+            border: `1px solid ${colors.borderMed}`,
+            color: colors.textDim, cursor: "pointer", fontSize: 16, borderRadius: "3px 3px 0 0", lineHeight: 1,
           }}>+</button>
         </div>
 
-        <select
-          value={memberName}
-          onChange={e => setMemberName(e.target.value)}
-          style={{
-            background:colors.bgInput, border:`1px solid ${colors.borderMed}`, color: memberName ? colors.coral : colors.textFaint,
-            padding:"4px 8px", borderRadius:3, fontSize:12, fontFamily:"inherit",
-            cursor:"pointer", outline:"none",
-          }}
-        >
-          <option value="">Who are you?</option>
-          {BAND_MEMBERS.map(m => <option key={m} value={m}>{m}</option>)}
-        </select>
-
         <button onClick={() => setShowAdmin(true)} style={{
-          padding:"4px 10px", fontSize:13, fontFamily:"inherit",
-          background:"transparent", border:`1px solid ${colors.borderTeal}`, color:colors.teal,
-          borderRadius:3, cursor:"pointer",
+          padding: "4px 10px", fontSize: 13, fontFamily: "inherit",
+          background: "transparent", border: `1px solid ${colors.borderTeal}`, color: colors.teal,
+          borderRadius: 3, cursor: "pointer",
         }}>⚙ Songs</button>
       </div>
 
       {metaBar}
 
       {/* Main content */}
-      <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
-        {/* Library sidebar */}
-        <div style={{
-          width: sidebarOpen ? 280 : 0,
-          minWidth: sidebarOpen ? 280 : 0,
-          borderRight:`1px solid ${colors.borderLight}`,
-          display:"flex", flexDirection:"column",
-          overflow:"hidden", transition:"width 0.2s, min-width 0.2s",
-          background:colors.bgPanel,
-        }}>
-          <div style={{
-            padding:"10px 16px 6px", fontSize:10, color:colors.textDim,
-            letterSpacing:"0.2em", textTransform:"uppercase", flexShrink:0,
-            borderBottom:`1px solid ${colors.borderLight}`,
-          }}>
-            Song Library — {activeShow.songIds.length} in set
-          </div>
-          <div style={{ flex:1, overflow:"hidden", display:"flex", flexDirection:"column" }}>
-            <SongLibrary setlistSongIds={activeShow.songIds} onAdd={addSong} onAddAll={addAllSongs} />
-          </div>
-        </div>
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
-        <button onClick={() => setSidebarOpen(o => !o)} style={{
-          width:20, background:colors.bgPanel, border:"none",
-          borderRight:`1px solid ${colors.borderLight}`, color:colors.textDim,
-          cursor:"pointer", fontSize:12, flexShrink:0,
-          display:"flex", alignItems:"center", justifyContent:"center",
-        }}>
-          {sidebarOpen ? "‹" : "›"}
+        {/* Library toggle tab */}
+        <button onClick={() => setLibraryOpen(o => !o)} style={{
+          width: 24, background: libraryOpen ? colors.bgPanel : colors.bgPage,
+          border: "none", borderRight: `1px solid ${colors.borderLight}`,
+          color: colors.textDim, cursor: "pointer", fontSize: 12, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          writingMode: "vertical-rl",
+        }} title={libraryOpen ? "Collapse library" : "Expand library"}>
+          {libraryOpen ? "‹ Library" : "Library ›"}
         </button>
 
-        <div style={{ flex:1, overflowY:"auto", display:"flex", flexDirection:"column" }}>
-          {viewMode === "builder" ? (
-            <>
-              <div style={{
-                padding:"10px 16px 6px", fontSize:10, color:colors.textDim,
-                letterSpacing:"0.2em", textTransform:"uppercase",
-                borderBottom:`1px solid ${colors.borderLight}`, flexShrink:0,
-              }}>
-                Set List — {activeShow.songIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}{!isShowMode && " · drag to reorder"}
-              </div>
-              <VotePanel show={activeShow} onOpen={openVoting} onClose={closeVoting} onPause={pauseVoting} onResume={resumeVoting} />
-              <div style={{ flex:1, overflowY:"auto" }}>
-                {isShowMode
-                  ? <ShowSetlist
-                      songIds={activeShow.songIds}
-                      playedSongIds={playedSongIds}
-                      voting={voting}
-                      songMap={songMap}
-                      onMarkPlayed={markPlayed}
-                      onUndoPlayed={undoPlayed}
-                    />
-                  : <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} />
-                }
-              </div>
-            </>
-          ) : (
-            <SuggestionsPanel suggestions={activeShow.suggestions || []} onLoad={loadSuggestion} />
+        {/* Library panel */}
+        {libraryOpen && (
+          <div style={{
+            width: 280, minWidth: 280,
+            borderRight: `1px solid ${colors.borderLight}`,
+            display: "flex", flexDirection: "column",
+            overflow: "hidden", background: colors.bgPanel,
+          }}>
+            <div style={{
+              padding: "10px 16px 6px", fontSize: 10, color: colors.textDim,
+              letterSpacing: "0.2em", textTransform: "uppercase", flexShrink: 0,
+              borderBottom: `1px solid ${colors.borderLight}`,
+            }}>
+              Song Library — {activeShow.songIds.length} in set
+            </div>
+            <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+              <SongLibrary setlistSongIds={activeShow.songIds} onAdd={addSong} onAddAll={addAllSongs} />
+            </div>
+          </div>
+        )}
+
+        {/* Setlist area */}
+        <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+          <div style={{
+            padding: "10px 16px 8px", fontSize: 10, color: colors.textDim,
+            letterSpacing: "0.2em", textTransform: "uppercase",
+            borderBottom: `1px solid ${colors.borderLight}`, flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <span>
+              Set List — {activeShow.songIds.length} songs
+              {totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}
+              {!isShowMode && " · drag to reorder"}
+            </span>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 10, color: colors.textMuted, textTransform: "none" }}>
+              <input type="checkbox" checked={!!activeShow.votingEnabled} onChange={toggleVoting} style={{ cursor: "pointer", accentColor: colors.teal }} />
+              Crowd voting
+            </label>
+          </div>
+
+          {activeShow.votingEnabled && (
+            <VotePanel show={activeShow} onOpen={openVoting} onClose={closeVoting} onPause={pauseVoting} onResume={resumeVoting} />
           )}
+
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {isShowMode
+              ? <ShowSetlist songIds={activeShow.songIds} playedSongIds={playedSongIds} voting={voting} songMap={songMap} onMarkPlayed={markPlayed} onUndoPlayed={undoPlayed} />
+              : <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} />
+            }
+          </div>
         </div>
       </div>
 
       <ShareModal show={shareShow} onClose={() => setShareShow(null)} onToast={showToast} />
       {showGenerate && (
-        <GenerateModal
-          currentSongIds={activeShow.songIds}
-          onGenerate={setSongIds}
-          onClose={() => setShowGenerate(false)}
-        />
+        <GenerateModal currentSongIds={activeShow.songIds} onGenerate={setSongIds} onClose={() => setShowGenerate(false)} />
       )}
       {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} onToast={showToast} />}
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
@@ -692,72 +587,6 @@ export default function App() {
           onConfirm={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }}
           onCancel={() => setConfirmDialog(null)}
         />
-      )}
-    </div>
-  );
-}
-
-function SuggestionsPanel({ suggestions, onLoad }) {
-  if (suggestions.length === 0) {
-    return (
-      <div style={{
-        flex:1, display:"flex", alignItems:"center", justifyContent:"center",
-        color:colors.textDim, fontSize:13, fontStyle:"italic", padding:24, textAlign:"center",
-      }}>
-        No suggestions yet — band members can save their own set via "Save as My Set"
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ padding:16 }}>
-      <div style={{ fontSize:10, color:colors.textDim, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:16 }}>
-        Band Suggestions
-      </div>
-      <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-        {suggestions.map((s, i) => (
-          <div key={i} style={{
-            background:colors.bgCard, border:`1px solid ${colors.borderMed}`,
-            borderRadius:4, padding:14,
-          }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
-              <div>
-                <div style={{ fontSize:14, color:colors.coral }}>{s.member}</div>
-                <div style={{ fontSize:10, color:colors.textMuted, marginTop:2 }}>
-                  {s.songIds.length} songs · saved {new Date(s.savedAt).toLocaleDateString()}
-                </div>
-              </div>
-              <button onClick={() => onLoad(s)} style={{
-                padding:"5px 12px", background:"transparent",
-                border:`1px solid ${colors.borderTeal}`, color:colors.teal,
-                borderRadius:3, cursor:"pointer", fontSize:11, fontFamily:"inherit",
-              }}>Load This Set</button>
-            </div>
-            <SuggestionSongListInner songIds={s.songIds} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SuggestionSongListInner({ songIds }) {
-  const { songs } = useSongs();
-  const songMap = Object.fromEntries(songs.map(s => [s.id, s]));
-  const preview = songIds.slice(0, 8);
-  const rest = songIds.length - 8;
-  return (
-    <div>
-      {preview.map((id, i) => (
-        <div key={id} style={{ fontSize:12, color:colors.textMuted, display:"flex", gap:8, marginBottom:2 }}>
-          <span style={{ color:colors.textDim, minWidth:20, textAlign:"right" }}>{i+1}.</span>
-          <span>{songMap[id]?.title || "Unknown"}</span>
-        </div>
-      ))}
-      {rest > 0 && (
-        <div style={{ fontSize:11, color:colors.textDim, marginTop:4, fontStyle:"italic" }}>
-          + {rest} more songs…
-        </div>
       )}
     </div>
   );

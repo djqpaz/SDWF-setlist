@@ -5,6 +5,7 @@ import { SongsProvider } from "./context/SongsContext.jsx";
 import VotePage from "./components/VotePage.jsx";
 import SetlistPage from "./components/SetlistPage.jsx";
 import ChartsPage from "./components/ChartsPage.jsx";
+import PrompterPage from "./components/PrompterPage.jsx";
 
 // Reset styles
 const style = document.createElement("style");
@@ -24,6 +25,7 @@ const params = new URLSearchParams(window.location.search);
 const voteId = params.get("vote");
 const setlistId = params.get("setlist");
 const chartsId = params.get("charts");
+const prompterId = params.get("prompter");
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -33,6 +35,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <SetlistPage showId={setlistId} />
     ) : chartsId ? (
       <ChartsPage showId={chartsId} />
+    ) : prompterId ? (
+      <PrompterPage showId={prompterId} />
     ) : (
       <SongsProvider>
         <App />
