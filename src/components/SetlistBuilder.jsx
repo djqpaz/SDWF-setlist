@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
   useSensor, useSensors,
@@ -16,7 +17,7 @@ function fmtDuration(secs) {
   return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
 }
 
-function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev }) {
+function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev, pendingRemove, onPendingRemove }) {
   const song = songMap[id];
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
@@ -39,8 +40,8 @@ function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev }) {
       <div style={{
         display:"flex", alignItems:"center", gap:10,
         padding:"10px 10px", borderRadius:4, marginBottom:3,
-        background:colors.bgCard,
-        border: sameKeyAsPrev ? `1px solid ${colors.borderGold}` : `1px solid ${colors.borderMed}`,
+        background: pendingRemove ? colors.bgSelectedWash : colors.bgCard,
+        border: pendingRemove ? `1px solid ${colors.borderRed}` : sameKeyAsPrev ? `1px solid ${colors.borderGold}` : `1px solid ${colors.borderMed}`,
         userSelect:"none",
       }}>
         {/* drag handle */}
@@ -88,17 +89,38 @@ function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev }) {
             <div style={{ fontSize:11, color:colors.textDim }}>{fmtDuration(song.duration)}</div>
           )}
         </div>
-        {/* remove */}
-        <button
-          onClick={() => onRemove(id)}
-          style={{
-            background:"none", border:"none", color:colors.textDim, cursor:"pointer",
-            fontSize:18, padding:"0 4px", flexShrink:0, lineHeight:1,
-          }}
-          title="Remove"
-        >
-          ×
-        </button>
+        {/* remove / confirm */}
+        {pendingRemove ? (
+          <div style={{ display:"flex", gap:4, flexShrink:0 }}>
+            <button
+              onClick={() => onRemove(id)}
+              style={{
+                background:colors.danger, border:"none", color:"#fff",
+                cursor:"pointer", fontSize:11, padding:"4px 8px",
+                borderRadius:3, fontFamily:"inherit", fontWeight:"bold",
+              }}
+            >Remove</button>
+            <button
+              onClick={() => onPendingRemove(null)}
+              style={{
+                background:"none", border:`1px solid ${colors.borderMed}`, color:colors.textMuted,
+                cursor:"pointer", fontSize:11, padding:"4px 8px",
+                borderRadius:3, fontFamily:"inherit",
+              }}
+            >Keep</button>
+          </div>
+        ) : (
+          <button
+            onClick={() => onPendingRemove(id)}
+            style={{
+              background:"none", border:"none", color:colors.textDim, cursor:"pointer",
+              fontSize:18, padding:"0 4px", flexShrink:0, lineHeight:1,
+            }}
+            title="Remove from set"
+          >
+            ×
+          </button>
+        )}
       </div>
     </div>
   );
@@ -111,6 +133,7 @@ export function calcTotalDuration(songIds, songMap) {
 export default function SetlistBuilder({ songIds, onChange }) {
   const { songs } = useSongs();
   const songMap = Object.fromEntries(songs.map(s => [s.id, s]));
+  const [pendingRemoveId, setPendingRemoveId] = useState(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -127,6 +150,7 @@ export default function SetlistBuilder({ songIds, onChange }) {
 
   function handleRemove(id) {
     onChange(songIds.filter(s => s !== id));
+    setPendingRemoveId(null);
   }
 
   if (songIds.length === 0) {
@@ -152,6 +176,8 @@ export default function SetlistBuilder({ songIds, onChange }) {
               onRemove={handleRemove}
               songMap={songMap}
               sameKeyAsPrev={i > 0 && songMap[id]?.key && songMap[songIds[i-1]]?.key === songMap[id]?.key}
+              pendingRemove={pendingRemoveId === id}
+              onPendingRemove={setPendingRemoveId}
             />
           ))}
         </div>
