@@ -3,6 +3,48 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
+## 2026-10-24 — Power rankings, shareable pages & SDWF brand refresh
+
+### Power Rankings
+- Added a **power ranking** to every song in the library (1–51), sourced from
+  the band's master ranking sheet, reflecting how well the band knows each song.
+- Song Library now defaults to sorting by **Ranking** — most road-ready songs
+  first, Christmas songs at the bottom.
+- **Generate Set → Power Ranking** preset: pulls the top-ranked songs in strict
+  order, no shuffle, so the generated set always reflects the band's best-known
+  material.
+- Performance **notes** from the band's song sheet (e.g. "KF solo", "MH start",
+  "JH elec / KF acoustic") are now stored per song and surfaced on the stage
+  prompter.
+- Added 3 songs missing from the library: *Wasting My Time*, *Some Kind of
+  Wonderful*, *The Power of Love*.
+
+### Shareable Set List Page
+- **Export** now opens a **Share** panel with a copyable public link
+  (`?setlist=SHOW_ID`) instead of going straight to print.
+- The shareable page is a clean, mobile-friendly read-only view of the set list
+  — band name, show details, numbered song list — anyone with the link can open
+  it on their phone.
+- Share panel also has **Open Page ↗**, **Copy as Text**, and **Print**
+  as secondary options.
+
+### Voting improvements
+- VotePanel now offers a **Custom** timer option — tap Custom, enter any
+  duration from 1–60 minutes, and open the vote.
+- Fixed the crowd voting page (`?vote=`) being unscrollable on mobile — the
+  app's global `overflow: hidden` is now lifted for public-facing pages.
+- "Sick Day with Ferris" on the voting page is larger and in brand coral so
+  the audience immediately knows whose show they're at.
+- Shared voting links now show **"Sick Day with Ferris — Vote for the Next
+  Song"** in iMessage / link previews instead of "Set List Builder".
+
+### Visual refresh
+- Entire app re-themed to match **sickdaywithferris.com**: dark navy
+  (`#1a1a2e`) background, `#ff6b6b` coral, `#4ecdc4` teal.
+- All secondary text tiers bumped up in brightness — the greyed-out labels
+  that were hard to read on the dark background are now clearly legible.
+- Fixed print export: set list prints white-on-black with buttons hidden.
+
 ## 2026-08-30 — Bulk Import Charts
 
 - Song Manager (⚙ Songs) now has a **Bulk Import Charts** button: paste a
