@@ -216,56 +216,59 @@ export default function App() {
 
   const metaBar = (
     <div style={{
-      display: "flex", alignItems: "center", gap: 8, padding: "8px 16px",
       borderBottom: `1px solid ${colors.borderLight}`, background: colors.bgPanel, flexShrink: 0,
-      flexWrap: "wrap",
     }}>
-      {editingName ? (
+      {/* Row 1: show name */}
+      <div style={{ padding: "8px 16px 4px", display: "flex", alignItems: "center", gap: 8 }}>
+        {editingName ? (
+          <input
+            autoFocus
+            value={activeShow.name}
+            onChange={e => updateShow(activeShow.id, { name: e.target.value })}
+            onBlur={() => setEditingName(false)}
+            onKeyDown={e => e.key === "Enter" && setEditingName(false)}
+            style={{
+              background: colors.bgInput, border: `1px solid ${colors.coral}`, color: colors.textPrimary,
+              padding: "4px 8px", borderRadius: 3, fontSize: 16, fontFamily: "inherit",
+              outline: "none", flex: 1, minWidth: 120,
+            }}
+          />
+        ) : (
+          <div
+            onClick={() => setEditingName(true)}
+            style={{
+              fontSize: 16, color: colors.textPrimary, cursor: "text", padding: "2px 0",
+              fontWeight: "bold",
+            }}
+            title="Click to rename"
+          >
+            {activeShow.name} <span style={{ color: colors.textDim, fontSize: 11, fontWeight: "normal" }}>✎</span>
+          </div>
+        )}
+      </div>
+
+      {/* Row 2: date, venue, action buttons */}
+      <div style={{ padding: "4px 16px 8px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <input
-          autoFocus
-          value={activeShow.name}
-          onChange={e => updateShow(activeShow.id, { name: e.target.value })}
-          onBlur={() => setEditingName(false)}
-          onKeyDown={e => e.key === "Enter" && setEditingName(false)}
+          value={activeShow.date || ""}
+          onChange={e => updateShow(activeShow.id, { date: e.target.value })}
+          placeholder="Date"
+          type="date"
           style={{
-            background: colors.bgInput, border: `1px solid ${colors.coral}`, color: colors.textPrimary,
-            padding: "4px 8px", borderRadius: 3, fontSize: 14, fontFamily: "inherit",
-            outline: "none", flex: 1, minWidth: 120,
+            background: colors.bgInput, border: `1px solid ${colors.borderMed}`, color: colors.textMuted,
+            padding: "3px 8px", borderRadius: 3, fontSize: 12, fontFamily: "inherit", outline: "none",
           }}
         />
-      ) : (
-        <div
-          onClick={() => setEditingName(true)}
+
+        <input
+          value={activeShow.venue || ""}
+          onChange={e => updateShow(activeShow.id, { venue: e.target.value })}
+          placeholder="Venue"
           style={{
-            fontSize: 14, color: colors.textPrimary, cursor: "text", padding: "4px 0",
-            flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            background: colors.bgInput, border: `1px solid ${colors.borderMed}`, color: colors.textMuted,
+            padding: "3px 8px", borderRadius: 3, fontSize: 12, fontFamily: "inherit", outline: "none", width: 140,
           }}
-          title="Click to rename"
-        >
-          {activeShow.name} <span style={{ color: colors.textDim, fontSize: 11 }}>✎</span>
-        </div>
-      )}
-
-      <input
-        value={activeShow.date || ""}
-        onChange={e => updateShow(activeShow.id, { date: e.target.value })}
-        placeholder="Date"
-        type="date"
-        style={{
-          background: colors.bgInput, border: `1px solid ${colors.borderMed}`, color: colors.textMuted,
-          padding: "4px 8px", borderRadius: 3, fontSize: 12, fontFamily: "inherit", outline: "none",
-        }}
-      />
-
-      <input
-        value={activeShow.venue || ""}
-        onChange={e => updateShow(activeShow.id, { venue: e.target.value })}
-        placeholder="Venue"
-        style={{
-          background: colors.bgInput, border: `1px solid ${colors.borderMed}`, color: colors.textMuted,
-          padding: "4px 8px", borderRadius: 3, fontSize: 12, fontFamily: "inherit", outline: "none", width: 130,
-        }}
-      />
+        />
 
       {!isMobile && (
         <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
@@ -316,6 +319,7 @@ export default function App() {
           }}>Delete Show</button>
         </div>
       )}
+      </div>
     </div>
   );
 
