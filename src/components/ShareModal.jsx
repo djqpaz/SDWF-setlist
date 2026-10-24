@@ -95,13 +95,14 @@ export default function ShareModal({ show, onClose, onToast }) {
 
         {/* Primary actions */}
         <div style={{ padding: "12px 20px", display: "flex", gap: 8 }}>
-          <button onClick={handleOpen} style={{
+          <a href={shareUrl} target="_blank" rel="noopener noreferrer" style={{
             flex: 1, padding: "10px 0", background: "transparent",
             border: `1px solid ${colors.borderTeal}`, color: colors.teal,
             borderRadius: 4, cursor: "pointer", fontSize: 13, fontFamily: "inherit",
+            textDecoration: "none", textAlign: "center", display: "block",
           }}>
             Open Page ↗
-          </button>
+          </a>
           <button onClick={handleCopy} style={{
             flex: 1, padding: "10px 0", background: copied ? colors.teal : colors.coral,
             border: "none", color: colors.onAccent,
