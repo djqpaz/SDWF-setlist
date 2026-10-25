@@ -15,7 +15,7 @@ export function SongsProvider({ children }) {
     const unsub = onSnapshot(collection(db, "songs"), async (snapshot) => {
       if (snapshot.empty) {
         const batch = writeBatch(db);
-        SONGS.forEach(s => batch.set(doc(db, "songs", String(s.id)), s));
+        SONGS.forEach(s => batch.set(doc(db, "songs", String(s.id)), s, { merge: true }));
         await batch.commit();
         return;
       }
@@ -25,7 +25,7 @@ export function SongsProvider({ children }) {
       const missingSongs = SONGS.filter(s => !existingIds.has(String(s.id)));
       if (missingSongs.length > 0) {
         const batch = writeBatch(db);
-        missingSongs.forEach(s => batch.set(doc(db, "songs", String(s.id)), s));
+        missingSongs.forEach(s => batch.set(doc(db, "songs", String(s.id)), s, { merge: true }));
         await batch.commit();
         return;
       }
@@ -39,7 +39,7 @@ export function SongsProvider({ children }) {
         if (!seed) return false;
         if (!data.key || !data.duration) return true;
         if (seed.powerRanking !== undefined && data.powerRanking === undefined) return true;
-        if (seed.note && !data.note) return true;
+        if (seed.note && data.note === undefined) return true;
         return false;
       });
       if (needsUpdate.length > 0) {
