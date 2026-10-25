@@ -184,10 +184,15 @@ export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
   const [replaceMode, setReplaceMode] = useState("replace");
   const [includeXmas, setIncludeXmas] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [confirming, setConfirming] = useState(false);
 
   const songMap = Object.fromEntries(songs.map(s => [s.id, s]));
 
   function handleGenerate() {
+    if (replaceMode === "replace" && currentSongIds.length > 0 && !confirming) {
+      setConfirming(true);
+      return;
+    }
     const exclude = replaceMode === "add" ? new Set(currentSongIds) : new Set();
     const ids = generate(songs, preset, count, exclude, includeXmas);
     const newIds = replaceMode === "replace" ? ids : [...currentSongIds, ...ids];
@@ -318,23 +323,50 @@ export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
         {/* Footer */}
         <div style={{
           padding: "12px 18px", borderTop: `1px solid ${colors.borderLight}`,
-          display: "flex", justifyContent: "flex-end", gap: 8,
+          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
         }}>
-          <button onClick={onClose} style={{
-            padding: "6px 14px", background: "transparent",
-            border: `1px solid ${colors.borderMed}`, color: colors.textDim,
-            borderRadius: 3, cursor: "pointer", fontSize: 12, fontFamily: "inherit",
-          }}>
-            Cancel
-          </button>
-          <button onClick={handleGenerate} style={{
-            padding: "6px 16px", background: colors.coral,
-            border: "none", color: colors.onAccent,
-            borderRadius: 3, cursor: "pointer", fontSize: 12,
-            fontFamily: "inherit", fontWeight: "bold",
-          }}>
-            Generate Set
-          </button>
+          {confirming ? (
+            <>
+              <div style={{ fontSize: 12, color: colors.gold }}>
+                ⚠ This will replace your current {currentSongIds.length} songs. Sure?
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setConfirming(false)} style={{
+                  padding: "6px 14px", background: "transparent",
+                  border: `1px solid ${colors.borderMed}`, color: colors.textDim,
+                  borderRadius: 3, cursor: "pointer", fontSize: 12, fontFamily: "inherit",
+                }}>
+                  Go back
+                </button>
+                <button onClick={handleGenerate} style={{
+                  padding: "6px 16px", background: colors.danger,
+                  border: "none", color: colors.onAccent,
+                  borderRadius: 3, cursor: "pointer", fontSize: 12,
+                  fontFamily: "inherit", fontWeight: "bold",
+                }}>
+                  Yes, replace
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <button onClick={onClose} style={{
+                padding: "6px 14px", background: "transparent",
+                border: `1px solid ${colors.borderMed}`, color: colors.textDim,
+                borderRadius: 3, cursor: "pointer", fontSize: 12, fontFamily: "inherit",
+              }}>
+                Cancel
+              </button>
+              <button onClick={handleGenerate} style={{
+                padding: "6px 16px", background: colors.coral,
+                border: "none", color: colors.onAccent,
+                borderRadius: 3, cursor: "pointer", fontSize: 12,
+                fontFamily: "inherit", fontWeight: "bold",
+              }}>
+                Generate Set
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
