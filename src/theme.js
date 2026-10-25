@@ -1,3 +1,9 @@
+// Fonts — matches sickdaywithferris.com
+export const fonts = {
+  heading: "'Poppins', sans-serif",
+  body: "'Inter', sans-serif",
+};
+
 // Central color palette — matches sickdaywithferris.com
 export const colors = {
   // Backgrounds

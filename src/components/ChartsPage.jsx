@@ -185,7 +185,7 @@ export default function ChartsPage({ showId }) {
         </nav>
 
         {songList.map((song, i) => (
-          <div key={song.id ?? i} id={`s${i}`}>
+          <div key={song.id ?? i} id={`song-${song.id ?? i}`}>
             <SongCard song={song} index={i} showChords={showChords} />
           </div>
         ))}

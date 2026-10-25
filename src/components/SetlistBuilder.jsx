@@ -17,7 +17,7 @@ function fmtDuration(secs) {
   return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
 }
 
-function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev, pendingRemove, onPendingRemove }) {
+function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev, pendingRemove, onPendingRemove, chartUrl }) {
   const song = songMap[id];
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
@@ -69,7 +69,10 @@ function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev, pendingRemo
             {song.artist} · {song.bpm} BPM
           </div>
           {song.note && (
-            <div style={{ fontSize:11, color:colors.textNote, marginTop:3, fontStyle:"italic", lineHeight:1.4 }}>
+            <div style={{
+              fontSize:11, color:colors.textNote, marginTop:3, fontStyle:"italic", lineHeight:1.4,
+              whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis",
+            }}>
               {song.note}
             </div>
           )}
@@ -89,6 +92,14 @@ function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev, pendingRemo
             <div style={{ fontSize:11, color:colors.textDim }}>{fmtDuration(song.duration)}</div>
           )}
         </div>
+        {/* chart link */}
+        {chartUrl && (
+          <a href={chartUrl} target="_blank" rel="noopener noreferrer" style={{
+            fontSize: 10, color: colors.textDim, border: `1px solid ${colors.borderLight}`,
+            borderRadius: 3, padding: "2px 5px", textDecoration: "none", flexShrink: 0,
+            whiteSpace: "nowrap",
+          }}>Chart ↗</a>
+        )}
         {/* remove / confirm */}
         {pendingRemove ? (
           <div style={{ display:"flex", gap:4, flexShrink:0 }}>
@@ -130,7 +141,7 @@ export function calcTotalDuration(songIds, songMap) {
   return songIds.reduce((sum, id) => sum + (songMap[id]?.duration || 0), 0);
 }
 
-export default function SetlistBuilder({ songIds, onChange }) {
+export default function SetlistBuilder({ songIds, onChange, showId, baseUrl }) {
   const { songs } = useSongs();
   const songMap = Object.fromEntries(songs.map(s => [s.id, s]));
   const [pendingRemoveId, setPendingRemoveId] = useState(null);
@@ -178,6 +189,7 @@ export default function SetlistBuilder({ songIds, onChange }) {
               sameKeyAsPrev={i > 0 && songMap[id]?.key && songMap[songIds[i-1]]?.key === songMap[id]?.key}
               pendingRemove={pendingRemoveId === id}
               onPendingRemove={setPendingRemoveId}
+              chartUrl={showId && baseUrl ? `${baseUrl}?charts=${showId}#song-${id}` : null}
             />
           ))}
         </div>
