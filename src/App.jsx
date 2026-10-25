@@ -368,10 +368,11 @@ export default function App() {
               }}>{show.name}</button>
             ))}
             <button onClick={addShow} style={{
-              padding: "4px 8px", background: "transparent",
+              padding: "4px 10px", background: "transparent",
               border: `1px solid ${colors.borderMed}`,
-              color: colors.textDim, cursor: "pointer", fontSize: 16, borderRadius: "3px 3px 0 0", lineHeight: 1,
-            }}>+</button>
+              color: colors.textDim, cursor: "pointer", fontSize: 11, borderRadius: "3px 3px 0 0", lineHeight: 1,
+              fontFamily: "inherit",
+            }}>+ New Show</button>
           </div>
           <button onClick={() => setShowAdmin(true)} style={{
             background: "transparent", border: `1px solid ${colors.borderTeal}`, color: colors.teal,
@@ -514,8 +515,9 @@ export default function App() {
           <button onClick={addShow} style={{
             padding: "5px 10px", background: "transparent",
             border: `1px solid ${colors.borderMed}`,
-            color: colors.textDim, cursor: "pointer", fontSize: 16, borderRadius: "3px 3px 0 0", lineHeight: 1,
-          }}>+</button>
+            color: colors.textDim, cursor: "pointer", fontSize: 11, borderRadius: "3px 3px 0 0", lineHeight: 1,
+            fontFamily: "inherit",
+          }}>+ New Show</button>
         </div>
 
         <button onClick={() => setShowAdmin(true)} style={{
