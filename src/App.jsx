@@ -90,6 +90,20 @@ export default function App() {
     if (isMobile) setMobileTab("setlist");
   }
 
+  function duplicateShowWithSongs(songIds) {
+    const s = {
+      ...DEFAULT_SHOW(),
+      name: `${activeShow.name} (alt)`,
+      date: activeShow.date || "",
+      venue: activeShow.venue || "",
+      songIds,
+    };
+    setDoc(doc(db, "shows", s.id), s);
+    setActiveShowId(s.id);
+    if (isMobile) setMobileTab("setlist");
+    showToast(`Duplicated as "${s.name}" ✓`);
+  }
+
   function deleteShow(id) {
     if (shows.length === 1) return;
     showConfirm("Delete this show?", () => {
@@ -451,6 +465,7 @@ export default function App() {
           <GenerateModal
             currentSongIds={activeShow.songIds}
             onGenerate={(ids) => { setSongIds(ids); setMobileTab("setlist"); }}
+            onDuplicate={duplicateShowWithSongs}
             onClose={() => setShowGenerate(false)}
           />
         )}
@@ -581,7 +596,7 @@ export default function App() {
 
       <ShareModal show={shareShow} onClose={() => setShareShow(null)} onToast={showToast} />
       {showGenerate && (
-        <GenerateModal currentSongIds={activeShow.songIds} onGenerate={setSongIds} onClose={() => setShowGenerate(false)} />
+        <GenerateModal currentSongIds={activeShow.songIds} onGenerate={setSongIds} onDuplicate={duplicateShowWithSongs} onClose={() => setShowGenerate(false)} />
       )}
       {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} onToast={showToast} />}
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}

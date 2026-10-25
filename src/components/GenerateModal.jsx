@@ -177,7 +177,7 @@ function generate(songs, presetId, count, exclude, includeXmas) {
   return shuffle(pool).slice(0, count).map(s => s.id);
 }
 
-export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
+export default function GenerateModal({ currentSongIds, onGenerate, onDuplicate, onClose }) {
   const { songs } = useSongs();
   const [preset, setPreset] = useState("arc");
   const [count, setCount] = useState(12);
@@ -321,53 +321,71 @@ export default function GenerateModal({ currentSongIds, onGenerate, onClose }) {
         </div>
 
         {/* Footer */}
-        <div style={{
-          padding: "12px 18px", borderTop: `1px solid ${colors.borderLight}`,
-          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
-        }}>
-          {confirming ? (
-            <>
-              <div style={{ fontSize: 12, color: colors.gold }}>
-                ⚠ This will replace your current {currentSongIds.length} songs. Sure?
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => setConfirming(false)} style={{
-                  padding: "6px 14px", background: "transparent",
-                  border: `1px solid ${colors.borderMed}`, color: colors.textDim,
-                  borderRadius: 3, cursor: "pointer", fontSize: 12, fontFamily: "inherit",
-                }}>
-                  Go back
-                </button>
-                <button onClick={handleGenerate} style={{
-                  padding: "6px 16px", background: colors.danger,
-                  border: "none", color: colors.onAccent,
-                  borderRadius: 3, cursor: "pointer", fontSize: 12,
-                  fontFamily: "inherit", fontWeight: "bold",
-                }}>
-                  Yes, replace
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <button onClick={onClose} style={{
-                padding: "6px 14px", background: "transparent",
-                border: `1px solid ${colors.borderMed}`, color: colors.textDim,
+        {confirming ? (
+          <div style={{
+            padding: "16px 18px", borderTop: `1px solid ${colors.borderRed}`,
+            background: colors.bgToastError,
+          }}>
+            <div style={{ fontSize: 13, color: colors.textPrimary, marginBottom: 6, fontWeight: "bold" }}>
+              Hold on — this will wipe your current {currentSongIds.length}-song set.
+            </div>
+            <div style={{ fontSize: 12, color: colors.textSecondary, marginBottom: 14, lineHeight: 1.5 }}>
+              Every song in <em>this</em> show gets replaced. If you want to keep the current set and try something new, duplicate the show instead — that creates a fresh copy with the generated songs and leaves this one untouched.
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button onClick={() => setConfirming(false)} style={{
+                padding: "7px 14px", background: "transparent",
+                border: `1px solid ${colors.borderMed}`, color: colors.textMuted,
                 borderRadius: 3, cursor: "pointer", fontSize: 12, fontFamily: "inherit",
               }}>
-                Cancel
+                ← Go back
               </button>
+              {onDuplicate && (
+                <button onClick={() => {
+                  const exclude = new Set();
+                  const ids = generate(songs, preset, count, exclude, includeXmas);
+                  onDuplicate(ids);
+                  onClose();
+                }} style={{
+                  padding: "7px 14px", background: colors.bgPanel,
+                  border: `1px solid ${colors.borderTeal}`, color: colors.teal,
+                  borderRadius: 3, cursor: "pointer", fontSize: 12, fontFamily: "inherit", fontWeight: "bold",
+                }}>
+                  Duplicate show with new set
+                </button>
+              )}
               <button onClick={handleGenerate} style={{
-                padding: "6px 16px", background: colors.coral,
+                padding: "7px 16px", background: colors.danger,
                 border: "none", color: colors.onAccent,
                 borderRadius: 3, cursor: "pointer", fontSize: 12,
-                fontFamily: "inherit", fontWeight: "bold",
+                fontFamily: "inherit", fontWeight: "bold", marginLeft: "auto",
               }}>
-                Generate Set
+                Yes, replace this set
               </button>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            padding: "12px 18px", borderTop: `1px solid ${colors.borderLight}`,
+            display: "flex", justifyContent: "flex-end", gap: 8,
+          }}>
+            <button onClick={onClose} style={{
+              padding: "6px 14px", background: "transparent",
+              border: `1px solid ${colors.borderMed}`, color: colors.textDim,
+              borderRadius: 3, cursor: "pointer", fontSize: 12, fontFamily: "inherit",
+            }}>
+              Cancel
+            </button>
+            <button onClick={handleGenerate} style={{
+              padding: "6px 16px", background: colors.coral,
+              border: "none", color: colors.onAccent,
+              borderRadius: 3, cursor: "pointer", fontSize: 12,
+              fontFamily: "inherit", fontWeight: "bold",
+            }}>
+              Generate Set
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
