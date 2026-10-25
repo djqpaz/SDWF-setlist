@@ -129,8 +129,12 @@ export default function SongAdmin({ onClose, onToast }) {
 
   async function handleAdd(data) {
     setSaving(true);
-    const id = crypto.randomUUID();
-    await setDoc(doc(db, "songs", id), { ...data, id });
+    const maxNumericId = songs.reduce((max, s) => {
+      const n = Number(s.id);
+      return Number.isInteger(n) && n > max ? n : max;
+    }, 0);
+    const id = String(maxNumericId + 1);
+    await setDoc(doc(db, "songs", id), { ...data, id: Number(id) });
     setSaving(false);
     setAdding(false);
   }

@@ -77,6 +77,7 @@ export const SONGS = [
   { id: 69, title: "Shake Up Christmas",                       artist: "Train",            bpm: 80,  genre: "Christmas",        year: 2011, popularity: 70, vibe: "joy",       key: "C",  duration: 247, note: "Original 'Tahoe' version — keep to original [Secular]" },
   { id: 70, title: "Santa Looked a Lot Like Daddy",            artist: "Brad Paisley",     bpm: 163, genre: "Christmas",        year: 2006, popularity: 62, vibe: "fun",       key: "E",  duration: 253, note: "Original recording — keep to original, will cut some solo time [Secular]" },
   { id: 71, title: "Please Come Home for Christmas",           artist: "Gary Allan",       bpm: 77,  genre: "Christmas",        year: 1999, popularity: 65, vibe: "soulful",   key: "G",  duration: 230, note: "Gary Allan version (originally popularized by the Eagles) — keep to original, great piano work and backup doo-wop vox [Secular]" },
+  { id: 72, title: "Santa Claus Is Coming To Town",            artist: "SDWF arrangement", bpm: 141, genre: "Christmas",        year: 1934, popularity: 80, vibe: "joy",       key: "D",  duration: 180, note: "SDWF arrangement [Secular] Summer of 69 version" },
 ];
 
 export const BAND_MEMBERS = ["Matt", "Kenny", "Spencer", "Chris", "John", "Dave", "Patrick"];
