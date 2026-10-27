@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SDWF — Select Show</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d0d1a;
+      color: #f0f0f0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 32px 40px 24px;
+      border-bottom: 1px solid #1e1e3a;
+    }
+    .eyebrow {
+      font-size: 11px;
+      color: #ff6b6b;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: bold;
+      color: #f0f0f0;
+      font-family: Georgia, serif;
+    }
+    #status {
+      padding: 48px 40px;
+      color: #555570;
+      font-size: 16px;
+    }
+    #show-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 32px 40px 48px;
+      flex: 1;
+    }
+    .show-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 28px;
+      background: #11112a;
+      border: 1px solid #1e1e3a;
+      border-radius: 8px;
+      color: #f0f0f0;
+      font-family: inherit;
+      font-size: 22px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.1s, border-color 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .show-btn:hover, .show-btn:active {
+      background: #1a1a3a;
+      border-color: #4ecdc4;
+    }
+    .show-meta {
+      font-size: 13px;
+      color: #4ecdc4;
+      font-weight: normal;
+      margin-top: 4px;
+    }
+    .show-arrow {
+      font-size: 24px;
+      color: #4ecdc4;
+      flex-shrink: 0;
+      margin-left: 20px;
+    }
+    footer {
+      padding: 20px 40px;
+      border-top: 1px solid #1e1e3a;
+      font-size: 11px;
+      color: #333348;
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">Sick Day with Ferris</div>
+    <h1>Select a Show</h1>
+  </header>
+
+  <div id="status">Loading shows…</div>
+  <div id="show-list" style="display:none"></div>
+
+  <footer>SDWF Set List Builder · Prompter Mode</footer>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyB4ZCM-WGSgGTZra0tuQ6WbZyMUfbt6BNU",
+      authDomain: "sdwf-setlist.firebaseapp.com",
+      projectId: "sdwf-setlist",
+      storageBucket: "sdwf-setlist.firebasestorage.app",
+      messagingSenderId: "153291273568",
+      appId: "1:153291273568:web:9d9d928c130b5e74ff9a05"
+    };
+
+    const PROMPTER_BASE = "https://djqpaz.github.io/SDWF-setlist/?prompter=";
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const statusEl = document.getElementById("status");
+    const listEl = document.getElementById("show-list");
+
+    db.collection("shows").get().then(snap => {
+      const shows = [];
+      snap.forEach(d => shows.push({ id: d.id, ...d.data() }));
+
+      shows.sort((a, b) => {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return b.date.localeCompare(a.date);
+      });
+
+      if (shows.length === 0) {
+        statusEl.textContent = "No shows found.";
+        return;
+      }
+
+      statusEl.style.display = "none";
+      listEl.style.display = "flex";
+
+      shows.forEach(show => {
+        const btn = document.createElement("button");
+        btn.className = "show-btn";
+
+        const songCount = (show.songIds || []).length;
+        const meta = [
+          show.date || null,
+          show.venue || null,
+          songCount ? `${songCount} songs` : null,
+        ].filter(Boolean).join(" · ");
+
+        btn.innerHTML =
+          '<div>' +
+            '<div>' + (show.name || "Untitled Show") + '</div>' +
+            (meta ? '<div class="show-meta">' + meta + '</div>' : '') +
+          '</div>' +
+          '<span class="show-arrow">→</span>';
+
+        btn.addEventListener("click", function() {
+          window.location.href = PROMPTER_BASE + show.id;
+        });
+
+        listEl.appendChild(btn);
+      });
+    }).catch(function(err) {
+      statusEl.textContent = "Could not load shows. Check your connection.";
+      console.error(err);
+    });
+  </script>
+</body>
+</html>

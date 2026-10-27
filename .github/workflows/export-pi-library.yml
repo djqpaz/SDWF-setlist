@@ -1,0 +1,31 @@
+name: Export Pi Library
+
+on:
+  schedule:
+    # Runs nightly at 5am UTC (midnight Eastern, 9pm Pacific)
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Export library.json from Firestore
+        run: node scripts/export-pi-library.js
+
+      - name: Commit library.json if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/library.json
+          git diff --staged --quiet && echo "No changes." || git commit -m "chore: update Pi library.json"
+          git push
