@@ -272,8 +272,8 @@ function handleLongPress(k) {
   const sel = k === "Enter" || k === " ";
   const nxt = k === "ArrowRight" || k === "ArrowDown";
   const bck = k === "ArrowLeft"  || k === "ArrowUp";
-  // Long press SELECT → main menu from anywhere
-  if (sel) { S.screen="menu"; render(); return; }
+  // Long press SELECT → main menu from anywhere, reset selection to top
+  if (sel) { S.screen="menu"; S.menuSel=0; render(); return; }
   if (S.screen === "live") {
     if (bck) { S.secSel=0; render(); }                                  // top of song
     if (nxt) { if (S.songSel < S.setlist.length-1){S.songSel++;buildSections();} render(); } // skip song
