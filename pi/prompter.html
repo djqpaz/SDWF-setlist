@@ -196,7 +196,7 @@ function parseSections(chart) {
     const hm = line.match(/^\[([^\]]+)\](.*)/);
     if (hm) {
       const inner = hm[1];
-      const isChord = /^[A-G][#b]?[a-zA-Z0-9]*$/.test(inner); // e.g. G, Am, D7, F#m
+      const isChord = /^[A-G][#b]?(maj|min|m|sus|add|aug|dim|[0-9]|\/[A-G])*[0-9b#]*(\/[A-G][#b]?)?$/.test(inner); // e.g. G, Am, D7, F#m — not CHORUS/BRIDGE
       if (!isChord) {
         cur = { label: inner, annotation: hm[2].trim(), lines: [] };
         sections.push(cur);
