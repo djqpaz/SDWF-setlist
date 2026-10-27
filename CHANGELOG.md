@@ -39,6 +39,34 @@ work shipped to the live site.
   on a line above lyrics, as found on Ultimate Guitar) and get inline
   `[bracket]` ChordPro format ready to paste into the chart source.
 
+## 2026-10-26 — Pi auto-sync via GitHub Action
+
+- **Nightly Pi sync** — a GitHub Action now exports `library.json` from
+  Firestore every night and commits it to the repo. The Pi can pull it on boot
+  (or cron) without needing a USB stick swap to pick up new songs or charts.
+
+## 2026-10-25 — Mobile overhaul, UI polish & data fixes
+
+### Mobile & UI
+- **Mobile overhaul** — redesigned action toolbar, SDWF band fonts applied
+  throughout, color-coded action buttons (coral = destructive, teal = share,
+  purple = build), and a **Chart ↗** button on every setlist song.
+- **Meta bar** — show name now appears on its own line above the date, venue,
+  and buttons so it doesn't get crowded.
+- Renamed the **+** button to **+ New Show** so its purpose is obvious.
+
+### Confirmations
+- **Remove song** now requires a confirmation tap before removing a song from
+  the set list.
+- **Generate Set** warns before replacing an existing set, with an option to
+  save the current set as a duplicate show first.
+
+### Data fixes
+- Song IDs standardized to numeric format across Firestore — fixes edge-case
+  lookup mismatches that could cause songs to show as blank.
+- Protected chart data during song migration — a `batch.set` was silently
+  wiping chart text on every sync.
+
 ## 2026-10-24 — Power rankings, shareable pages & SDWF brand refresh
 
 ### Power Rankings
@@ -80,6 +108,12 @@ work shipped to the live site.
 - All secondary text tiers bumped up in brightness — the greyed-out labels
   that were hard to read on the dark background are now clearly legible.
 - Fixed print export: set list prints white-on-black with buttons hidden.
+
+### Band Charts shareable link
+- The band charts page now has its own shareable URL (`?charts=SHOW_ID`) —
+  open it on any device without going through the main app.
+- Fixed **Open Page ↗** button — was silently blocked by the popup blocker;
+  now uses a real `<a>` link so it always opens.
 
 ## 2026-08-30 — Bulk Import Charts
 
