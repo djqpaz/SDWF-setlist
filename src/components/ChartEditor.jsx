@@ -178,6 +178,11 @@ export default function ChartEditor({ song, onSave, onCancel }) {
                   fontFamily:"inherit", whiteSpace:"nowrap",
                   border:`1px solid ${colors.borderTeal}`, background:"transparent", color:colors.teal,
                 }}>Search chords online ↗</button>
+                <a href="https://claude.ai/artifact/D3AV7T5gYPnCXJPdXez7kD" target="_blank" rel="noreferrer" style={{
+                  padding:"2px 8px", borderRadius:10, fontSize:10, cursor:"pointer",
+                  fontFamily:"inherit", whiteSpace:"nowrap", textDecoration:"none",
+                  border:`1px solid ${colors.gold || "#c8a840"}`, background:"transparent", color:colors.gold || "#c8a840",
+                }}>Convert format ↗</a>
               </div>
               <span style={{ fontSize:11, color:colors.textFaint }}>{sections.length} sections · {lineCount} lines</span>
             </div>
@@ -195,7 +200,7 @@ export default function ChartEditor({ song, onSave, onCancel }) {
               Chords in [square brackets] sit above the word after them. A line that is only{" "}
               <span style={{ color:colors.coral }}>[SECTION NAME]</span> becomes a banner. Blank lines are ignored.
               <br />
-              "Search chords online" opens Ultimate Guitar in a new tab as a starting point — paste what you find back in here and reformat it.
+              "Search chords online" opens Ultimate Guitar in a new tab — paste what you find into "Convert format" to turn overhead chords into [bracket] format, then paste the result here.
             </div>
           </div>
 
