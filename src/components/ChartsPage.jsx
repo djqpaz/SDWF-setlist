@@ -15,16 +15,16 @@ function parseLine(l) {
   cur.t += l.slice(last); segs.push(cur); return segs;
 }
 
-function renderChart(chart, note) {
+function renderChart(chart, note, showChords = true) {
   const lines = chart.split("\n").slice(1);
   if (note && lines[0] === note) lines.shift();
-  return lines.map(raw => {
+  return lines.map((raw, ri) => {
     const l = raw.replace(/\s+$/, "");
-    if (!l.trim()) return <div key={raw} style={{ height: "0.5em" }} />;
+    if (!l.trim()) return <div key={ri} style={{ height: "0.5em" }} />;
     const sm = l.match(/^\[([^\]]+)\]\s*(?:\((.*)\))?\s*$/);
     if (sm && !CH.test(sm[1])) {
       return (
-        <div key={l} style={{ display: "flex", gap: 10, alignItems: "baseline", margin: "14px 0 4px", flexWrap: "wrap" }}>
+        <div key={ri} style={{ display: "flex", gap: 10, alignItems: "baseline", margin: "14px 0 4px", flexWrap: "wrap" }}>
           <b style={{ background: "#1e3a38", color: "#4ecdc4", borderLeft: "3px solid #4ecdc4", padding: "1px 10px", fontSize: 12, letterSpacing: "0.08em" }}>{sm[1]}</b>
           {sm[2] && <span style={{ color: "#8888aa", fontStyle: "normal", fontSize: 13 }}>{sm[2]}</span>}
         </div>
@@ -32,11 +32,17 @@ function renderChart(chart, note) {
     }
     const segs = parseLine(l);
     const chordOnly = segs.every(s => !s.t.trim());
+    // When chords hidden, skip pure-chord lines entirely
+    if (chordOnly && !showChords) return null;
     return (
-      <div key={l} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", minHeight: "1.5em", opacity: chordOnly ? 0.8 : 1 }}>
+      <div key={ri} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", minHeight: showChords ? "1.5em" : undefined }}>
         {segs.map((s, i) => (
           <span key={i} style={{ display: "inline-flex", flexDirection: "column" }}>
-            <span style={{ color: "#ff6b6b", fontWeight: "bold", height: "1.4em", whiteSpace: "pre", paddingRight: "0.4em" }}>{s.c || " "}</span>
+            {showChords && (
+              <span style={{ color: "#ff6b6b", fontWeight: "bold", height: "1.4em", whiteSpace: "pre", paddingRight: "0.4em" }}>
+                {s.c || " "}
+              </span>
+            )}
             <span style={{ whiteSpace: "pre" }}>{s.t || (s.c ? " " : "")}</span>
           </span>
         ))}
@@ -81,10 +87,7 @@ function SongCard({ song, index, showChords }) {
         fontSize: 14, lineHeight: 1.6, color: "#f7f7f7",
       }}>
         {song.chart
-          ? (showChords ? renderChart(song.chart, song.note) : renderChart(song.chart, song.note).filter((_, i) => {
-              // crude: skip chord-only lines when chords hidden — just render all, toggled via opacity
-              return true;
-            }))
+          ? renderChart(song.chart, song.note, showChords)
           : <em style={{ color: "#666688" }}>No chart yet</em>
         }
       </div>
@@ -182,14 +185,14 @@ export default function ChartsPage({ showId, songId }) {
       </header>
 
       <main style={{ maxWidth: 860, margin: "0 auto", padding: "16px 16px 40px" }}>
-        {/* Table of contents */}
+        {/* Table of contents — links use index-based IDs matching song divs below */}
         <nav style={{ background: "#1e1e34", border: "1px solid #2a2a4a", borderRadius: 8, padding: "12px 16px", marginBottom: 20 }} className="no-print">
           <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#8888aa", marginBottom: 8 }}>Set list</div>
           <ol style={{ margin: 0, padding: 0, listStyle: "none", columns: "2 280px" }}>
             {songList.map((s, i) => (
               <li key={s.id ?? i} style={{ breakInside: "avoid", display: "flex", gap: 8, padding: "3px 0", fontSize: 14 }}>
                 <span style={{ color: "#9b8ec4", fontVariantNumeric: "tabular-nums", minWidth: 22, textAlign: "right" }}>{i + 1}</span>
-                <a href={`#s${i}`} style={{ color: "#f7f7f7", textDecoration: "none", flex: 1 }}>{s.title}</a>
+                <a href={`#chart-${i}`} style={{ color: "#f7f7f7", textDecoration: "none", flex: 1 }}>{s.title}</a>
                 <span style={{ color: "#8888aa", fontSize: 12, whiteSpace: "nowrap" }}>{s.key} · {s.bpm}</span>
               </li>
             ))}
@@ -197,7 +200,7 @@ export default function ChartsPage({ showId, songId }) {
         </nav>
 
         {songList.map((song, i) => (
-          <div key={song.id ?? i} id={`song-${song.id ?? i}`}>
+          <div key={song.id ?? i} id={`chart-${i}`}>
             <SongCard song={song} index={i} showChords={showChords} />
           </div>
         ))}
@@ -206,9 +209,28 @@ export default function ChartsPage({ showId, songId }) {
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          body { background: #fff !important; color: #000 !important; }
-          article { border: none !important; background: #fff !important; }
-          span[style*="ff6b6b"] { color: #000 !important; }
+          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          body, html, #root { background: #fff !important; }
+          header { background: #f5f5f5 !important; border-bottom: 1px solid #ccc !important; }
+          header h1 { color: #111 !important; }
+          header div { color: #444 !important; }
+          main { padding-top: 0 !important; }
+          nav { display: none !important; }
+          article {
+            background: #fff !important;
+            border: 1px solid #ddd !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+            margin-bottom: 32px !important;
+          }
+          article > div:first-child { border-bottom: 1px solid #ddd !important; background: #fff !important; }
+          article div[style*="2a220e"] { background: #fff8e6 !important; border-bottom: 1px solid #e0c060 !important; }
+          article div[style*="f7f7f7"] { color: #111 !important; }
+          article div[style*="8888aa"] { color: #555 !important; }
+          article span[style*="9b8ec4"] { color: #666 !important; }
+          article span[style*="ff6b6b"] { color: #c00 !important; }
+          article b[style*="4ecdc4"] { color: #006b6b !important; background: #e6f7f7 !important; }
+          article span[style*="4ecdc4"] { color: #006b6b !important; }
         }
       `}</style>
     </div>
