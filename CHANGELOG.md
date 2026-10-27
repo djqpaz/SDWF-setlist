@@ -19,6 +19,8 @@ work shipped to the live site.
 - **Long press BACK from set list → shows screen** (long press BACK inside a
   song still jumps to the top of that song).
 - Removed the keyboard `0` key shortcut — foot switch has no 0 key.
+- Fixed section headers like `[CHORUS]` and `[BRIDGE]` being mistaken for
+  chords — they now always render as their own section banner.
 
 ### Band Charts page
 - **TOC links now work** — clicking a song in the set list at the top actually
@@ -108,6 +110,19 @@ work shipped to the live site.
 - All secondary text tiers bumped up in brightness — the greyed-out labels
   that were hard to read on the dark background are now clearly legible.
 - Fixed print export: set list prints white-on-black with buttons hidden.
+
+### Live Prompter page & cleanup
+- **Prompter ↗** — the "↓ Prompter file" download is replaced by a link to a
+  live prompter page (`?prompter=SHOW_ID`) that stays in sync with Firestore.
+  Song list on the left, full chart on the right, BPM/key/note badges, and an
+  "Up next" preview. Arrow keys and spacebar step through songs, so it works
+  with the Pi footswitch.
+- **Crowd voting toggle** — each show now has a "Crowd voting" checkbox; the
+  voting panel only appears when it's turned on.
+- **Removed Suggestions** — the band-member suggestions feature, "Save as My
+  Set", and the "Who are you?" member picker are gone.
+- The **Song Library** panel now starts collapsed, with a tab on the left edge
+  to open and close it (the app remembers your choice).
 
 ### Band Charts shareable link
 - The band charts page now has its own shareable URL (`?charts=SHOW_ID`) —
