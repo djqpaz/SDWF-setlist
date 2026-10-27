@@ -189,7 +189,7 @@ export default function SetlistBuilder({ songIds, onChange, showId, baseUrl }) {
               sameKeyAsPrev={i > 0 && songMap[id]?.key && songMap[songIds[i-1]]?.key === songMap[id]?.key}
               pendingRemove={pendingRemoveId === id}
               onPendingRemove={setPendingRemoveId}
-              chartUrl={showId && baseUrl ? `${baseUrl}?charts=${showId}#song-${id}` : null}
+              chartUrl={showId && baseUrl ? `${baseUrl}?charts=${showId}&song=${id}` : null}
             />
           ))}
         </div>

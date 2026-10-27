@@ -92,7 +92,7 @@ function SongCard({ song, index, showChords }) {
   );
 }
 
-export default function ChartsPage({ showId }) {
+export default function ChartsPage({ showId, songId }) {
   const [show, setShow] = useState(null);
   const [songs, setSongs] = useState({});
   const [loading, setLoading] = useState(true);
@@ -141,7 +141,19 @@ export default function ChartsPage({ showId }) {
     </div>
   );
 
-  const songList = (show.songIds || []).map(id => songs[String(id)] || songs[id]).filter(Boolean);
+  const allSongs = (show.songIds || []).map(id => songs[String(id)] || songs[id]).filter(Boolean);
+  const songList = songId
+    ? allSongs.filter(s => String(s.id) === String(songId))
+    : allSongs;
+
+  // Single-song view: just the card, no chrome
+  if (songId && songList.length === 1) {
+    return (
+      <div style={{ minHeight: "100dvh", background: "#1a1a2e", color: "#f7f7f7", fontFamily: "sans-serif", padding: "24px 16px" }}>
+        <SongCard song={songList[0]} index={0} showChords={true} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100dvh", background: "#1a1a2e", color: "#f7f7f7", fontFamily: "sans-serif" }}>

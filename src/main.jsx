@@ -31,6 +31,7 @@ const params = new URLSearchParams(window.location.search);
 const voteId = params.get("vote");
 const setlistId = params.get("setlist");
 const chartsId = params.get("charts");
+const chartSongId = params.get("song");
 const prompterId = params.get("prompter");
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -40,7 +41,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     ) : setlistId ? (
       <SetlistPage showId={setlistId} />
     ) : chartsId ? (
-      <ChartsPage showId={chartsId} />
+      <ChartsPage showId={chartsId} songId={chartSongId} />
     ) : prompterId ? (
       <PrompterPage showId={prompterId} />
     ) : (
