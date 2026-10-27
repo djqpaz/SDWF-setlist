@@ -3,6 +3,42 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
+## 2026-10-27 — Pi prompter rebuild, band charts fixes & charting tools
+
+### Pi Stage Prompter (complete rebuild)
+- **Section-by-section navigation** — each `[SECTION]` in a chart is its own
+  full-screen page on the Pi. BACK/NEXT steps through sections; a faded
+  preview at the bottom shows what's coming next.
+- **ChordPro inline chords** — chords render above the word they fall on,
+  matching the iPad prompter view in the web app.
+- **Pulls all shows from Firestore** at boot and caches to localStorage for
+  offline use. No more single-show JSON file — all four shows stay in sync
+  automatically.
+- **Long press SELECT → main menu from any screen** — previously only worked
+  from inside a song. Now works from set list, shows, options, sync, everywhere.
+- **Long press BACK from set list → shows screen** (long press BACK inside a
+  song still jumps to the top of that song).
+- Removed the keyboard `0` key shortcut — foot switch has no 0 key.
+
+### Band Charts page
+- **TOC links now work** — clicking a song in the set list at the top actually
+  scrolls to that song (the anchor IDs were mismatched).
+- **Chords on/off now works** — toggling chords hides chord rows; previously
+  the button changed color but had no effect on the chart.
+- **Print now looks clean** — charts print on white paper with readable text;
+  previously all dark backgrounds printed as black boxes.
+
+### Chart ↗ button — single-song view
+- The **Chart ↗** button on each setlist song now opens just that one song's
+  chart in a new tab instead of the full band charts page. The link is
+  shareable — send it directly to a bandmate for one chart.
+
+### ChordPro Converter tool
+- New **Convert format ↗** button in the Chart Editor (next to "Search chords
+  online"). Opens a conversion tool: paste a traditional chord chart (chords
+  on a line above lyrics, as found on Ultimate Guitar) and get inline
+  `[bracket]` ChordPro format ready to paste into the chart source.
+
 ## 2026-10-24 — Power rankings, shareable pages & SDWF brand refresh
 
 ### Power Rankings
