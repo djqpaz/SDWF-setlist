@@ -269,16 +269,19 @@ function onKeyUp(e) {
   if (elapsed < LONG_MS) handleShortPress(k);
 }
 function handleLongPress(k) {
-  if (S.screen !== "live") return;
-  if (k === "ArrowLeft"  || k === "ArrowUp")   { S.secSel=0; render(); }
-  if (k === "Enter"      || k === " ")          { S.screen="menu"; render(); }
-  if (k === "ArrowRight" || k === "ArrowDown")  {
-    if (S.songSel < S.setlist.length-1) { S.songSel++; buildSections(); }
-    render();
+  const sel = k === "Enter" || k === " ";
+  const nxt = k === "ArrowRight" || k === "ArrowDown";
+  const bck = k === "ArrowLeft"  || k === "ArrowUp";
+  // Long press SELECT → main menu from anywhere
+  if (sel) { S.screen="menu"; render(); return; }
+  if (S.screen === "live") {
+    if (bck) { S.secSel=0; render(); }                                  // top of song
+    if (nxt) { if (S.songSel < S.setlist.length-1){S.songSel++;buildSections();} render(); } // skip song
+  } else if (S.screen === "setlist") {
+    if (bck) { S.screen="shows"; render(); }                            // back to shows
   }
 }
 function handleShortPress(k) {
-  if (k==="0") { S.screen="menu"; render(); return; }
   const dn = k==="ArrowDown" || k==="ArrowRight";
   const up = k==="ArrowUp"   || k==="ArrowLeft";
   const ok = k==="Enter"     || k===" ";
