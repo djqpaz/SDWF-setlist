@@ -15,7 +15,7 @@ const TYPE_COLORS = {
   "Transition": "#8888aa",
 };
 
-const EMPTY_BIT = { title: "", type: "Narration", speaker: "Brett", duration: "", content: "" };
+const EMPTY_BIT = { title: "", type: "Narration", speakers: [], duration: "", content: "" };
 
 function Field({ label, value, onChange, type = "text", options, rows }) {
   const inputStyle = {
@@ -45,13 +45,48 @@ function Field({ label, value, onChange, type = "text", options, rows }) {
   );
 }
 
+function SpeakerPicker({ value, onChange }) {
+  const people = SPEAKERS.filter(s => s !== "—");
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <label style={{ fontSize: 10, color: colors.textMuted, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+        Speaker(s)
+      </label>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+        {people.map(name => {
+          const on = value.includes(name);
+          return (
+            <button
+              key={name}
+              type="button"
+              onClick={() => onChange(on ? value.filter(n => n !== name) : [...value, name])}
+              style={{
+                padding: "3px 10px", borderRadius: 99, fontSize: 11, cursor: "pointer",
+                fontFamily: "inherit",
+                background: on ? colors.teal : "transparent",
+                color: on ? colors.onAccent : colors.textSecondary,
+                border: `1px solid ${on ? colors.teal : colors.borderMed}`,
+              }}
+            >{name}</button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function BitForm({ initial, onSave, onCancel, saving }) {
-  const [form, setForm] = useState({ ...initial });
+  // speakers stored as array internally; saved as comma-joined string
+  const initSpeakers = initial.speakers && Array.isArray(initial.speakers)
+    ? initial.speakers
+    : (initial.speaker && initial.speaker !== "—" ? initial.speaker.split(", ").filter(Boolean) : []);
+  const [form, setForm] = useState({ ...initial, speakers: initSpeakers });
   const set = key => val => setForm(f => ({ ...f, [key]: val }));
 
   function handleSave() {
     if (!form.title.trim()) return;
-    onSave({ ...form, duration: Number(form.duration) || 0 });
+    const speaker = form.speakers.length ? form.speakers.join(", ") : "—";
+    onSave({ ...form, speaker, duration: Number(form.duration) || 0 });
   }
 
   return (
@@ -64,8 +99,10 @@ function BitForm({ initial, onSave, onCancel, saving }) {
           <Field label="Title *" value={form.title} onChange={set("title")} />
         </div>
         <Field label="Type" value={form.type} onChange={set("type")} options={BIT_TYPES} />
-        <Field label="Speaker" value={form.speaker} onChange={set("speaker")} options={SPEAKERS} />
         <Field label="Duration (min)" value={form.duration} onChange={set("duration")} type="number" />
+        <div style={{ gridColumn: "1 / -1" }}>
+          <SpeakerPicker value={form.speakers} onChange={val => setForm(f => ({ ...f, speakers: val }))} />
+        </div>
       </div>
       <Field label="Script / notes" value={form.content} onChange={set("content")} rows={5} />
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>

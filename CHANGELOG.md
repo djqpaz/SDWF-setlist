@@ -3,6 +3,15 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
+## 2026-10-30 — Multi-speaker Cameron Bits
+
+### Cameron Bit speaker field — multi-select
+- The **Speaker** field in Cameron Bits is now a chip picker — tap any combination
+  of names to mark who's on mic for that bit (Brett, Spencer, Kenny, John, Chris,
+  Matt, Dave, All)
+- Previously a single-select dropdown; saved as comma-joined string ("Brett, Spencer")
+  so all existing display code stays the same
+
 ## 2026-10-30 — Cameron Bits
 
 ### Cameron Bits — show script management
