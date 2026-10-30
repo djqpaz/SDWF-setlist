@@ -111,9 +111,10 @@ const APP_URL = `${window.location.origin}${window.location.pathname}`;
 export default function ChartsPage({ showId, songId }) {
   const [show, setShow] = useState(null);
   const [songs, setSongs] = useState({});
+  const [bits, setBits] = useState({});
   const [loading, setLoading] = useState(true);
   const [showChords, setShowChords] = useState(true);
-  const [currentIdx, setCurrentIdx] = useState(0);
+  const [currentSongIdx, setCurrentSongIdx] = useState(0);
 
   useEffect(() => {
     document.documentElement.style.overflow = "auto";
@@ -147,30 +148,48 @@ export default function ChartsPage({ showId, songId }) {
     return unsub;
   }, []);
 
-  const songListLen = show
-    ? (show.songIds || []).map(id => songs[String(id)] || songs[id]).filter(Boolean).length
-    : 0;
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "cameronBits"), snap => {
+      const map = {};
+      snap.forEach(d => { map[d.id] = d.data(); });
+      setBits(map);
+    });
+    return unsub;
+  }, []);
+
+  // Build ordered entries from show.items (with songIds fallback)
+  const allEntries = show
+    ? (show.items && show.items.length > 0
+        ? show.items.map(item => item.type === "cameron"
+            ? bits[item.id] ? { type: "cameron", bit: bits[item.id] } : null
+            : (songs[String(item.id)] || songs[item.id]) ? { type: "song", song: songs[String(item.id)] || songs[item.id] } : null)
+          .filter(Boolean)
+        : (show.songIds || []).map(id => songs[String(id)] || songs[id]).filter(Boolean).map(s => ({ type: "song", song: s })))
+    : [];
+
+  const songEntries = allEntries.filter(e => e.type === "song");
 
   useEffect(() => {
-    if (songListLen <= 1) return;
+    if (songEntries.length <= 1) return;
     const visible = new Set();
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        const idx = parseInt(e.target.id.replace("chart-", ""), 10);
+    const obs = new IntersectionObserver(ioEntries => {
+      ioEntries.forEach(e => {
+        const idx = parseInt(e.target.dataset.songIdx || "-1", 10);
+        if (idx < 0) return;
         if (e.isIntersecting) visible.add(idx);
         else visible.delete(idx);
       });
-      if (visible.size > 0) setCurrentIdx(Math.min(...visible));
+      if (visible.size > 0) setCurrentSongIdx(Math.min(...visible));
     }, { threshold: 0.05 });
-    for (let i = 0; i < songListLen; i++) {
-      const el = document.getElementById(`chart-${i}`);
+    for (let i = 0; i < songEntries.length; i++) {
+      const el = document.getElementById(`chart-song-${i}`);
       if (el) obs.observe(el);
     }
     return () => obs.disconnect();
-  }, [songListLen]);
+  }, [songEntries.length]);
 
   function scrollToSong(idx) {
-    const el = document.getElementById(`chart-${idx}`);
+    const el = document.getElementById(`chart-song-${idx}`);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -185,19 +204,19 @@ export default function ChartsPage({ showId, songId }) {
     </div>
   );
 
-  const allSongs = (show.songIds || []).map(id => songs[String(id)] || songs[id]).filter(Boolean);
-  const songList = songId
-    ? allSongs.filter(s => String(s.id) === String(songId))
-    : allSongs;
-
   // Single-song view: just the card, no chrome
-  if (songId && songList.length === 1) {
-    return (
+  if (songId) {
+    const singleSong = songs[String(songId)] || songs[songId];
+    if (singleSong) return (
       <div style={{ minHeight: "100dvh", background: "#1a1a2e", color: "#f7f7f7", fontFamily: "sans-serif", padding: "24px 16px" }}>
-        <SongCard song={songList[0]} index={0} showChords={true} editUrl={`${APP_URL}?editSong=${songList[0].id}`} />
+        <SongCard song={singleSong} index={0} showChords={true} editUrl={`${APP_URL}?editSong=${singleSong.id}`} />
       </div>
     );
   }
+
+  const entriesForView = songId
+    ? allEntries.filter(e => e.type === "song" && String(e.song.id) === String(songId))
+    : allEntries;
 
   return (
     <div style={{ minHeight: "100dvh", background: "#1a1a2e", color: "#f7f7f7", fontFamily: "sans-serif" }}>
@@ -208,7 +227,7 @@ export default function ChartsPage({ showId, songId }) {
         </div>
         <h1 style={{ margin: "6px 0 4px", fontSize: 26, fontWeight: "bold", color: "#f7f7f7" }}>{show.name}</h1>
         <div style={{ fontSize: 13, color: "#8888aa" }}>
-          {[show.date, show.venue, `${songList.length} songs`].filter(Boolean).join(" · ")}
+          {[show.date, show.venue, `${songEntries.length} songs`].filter(Boolean).join(" · ")}
         </div>
 
         {/* Action bar */}
@@ -230,25 +249,74 @@ export default function ChartsPage({ showId, songId }) {
         <nav style={{ background: "#1e1e34", border: "1px solid #2a2a4a", borderRadius: 8, padding: "12px 16px", marginBottom: 20 }} className="no-print">
           <div style={{ fontSize: 11, letterSpacing: "0.15em", textTransform: "uppercase", color: "#8888aa", marginBottom: 8 }}>Set list</div>
           <ol style={{ margin: 0, padding: 0, listStyle: "none", columns: "2 280px" }}>
-            {songList.map((s, i) => (
-              <li key={s.id ?? i} style={{ breakInside: "avoid", display: "flex", gap: 8, padding: "3px 0", fontSize: 14 }}>
-                <span style={{ color: "#9b8ec4", fontVariantNumeric: "tabular-nums", minWidth: 22, textAlign: "right" }}>{i + 1}</span>
-                <a href={`#chart-${i}`} style={{ color: "#f7f7f7", textDecoration: "none", flex: 1 }}>{s.title}</a>
-                <span style={{ color: "#8888aa", fontSize: 12, whiteSpace: "nowrap" }}>{s.key} · {s.bpm}</span>
-              </li>
-            ))}
+            {(() => {
+              let sIdx = 0;
+              return entriesForView.map((e, i) => {
+                if (e.type === "cameron") {
+                  const b = e.bit;
+                  return (
+                    <li key={`bit-${b.id}`} style={{ breakInside: "avoid", display: "flex", gap: 8, padding: "3px 0", fontSize: 13 }}>
+                      <span style={{ color: "#4ecdc4", minWidth: 22, textAlign: "right" }}>▸</span>
+                      <a href={`#chart-${i}`} style={{ color: "#4ecdc4", textDecoration: "none", flex: 1, fontStyle: "italic" }}>{b.title}</a>
+                      <span style={{ color: "#8888aa", fontSize: 11, whiteSpace: "nowrap" }}>{b.type}</span>
+                    </li>
+                  );
+                }
+                const s = e.song;
+                const n = sIdx++;
+                return (
+                  <li key={s.id ?? i} style={{ breakInside: "avoid", display: "flex", gap: 8, padding: "3px 0", fontSize: 14 }}>
+                    <span style={{ color: "#9b8ec4", fontVariantNumeric: "tabular-nums", minWidth: 22, textAlign: "right" }}>{n + 1}</span>
+                    <a href={`#chart-song-${n}`} style={{ color: "#f7f7f7", textDecoration: "none", flex: 1 }}>{s.title}</a>
+                    <span style={{ color: "#8888aa", fontSize: 12, whiteSpace: "nowrap" }}>{s.key} · {s.bpm}</span>
+                  </li>
+                );
+              });
+            })()}
           </ol>
         </nav>
 
-        {songList.map((song, i) => (
-          <div key={song.id ?? i} id={`chart-${i}`}>
-            <SongCard song={song} index={i} showChords={showChords} editUrl={`${APP_URL}?editSong=${song.id}`} />
-          </div>
-        ))}
+        {(() => {
+          let sIdx = 0;
+          return entriesForView.map((e, i) => {
+            if (e.type === "cameron") {
+              const b = e.bit;
+              const dotColor = { "Narration": "#4ecdc4", "Emcee": "#ff6b6b", "LX / cue": "#f4c542", "Wardrobe": "#9b8ec4", "Transition": "#8888aa" }[b.type] || "#4ecdc4";
+              return (
+                <div key={`bit-${b.id}`} id={`chart-${i}`} style={{
+                  background: "#1e1e34", border: `1px solid ${dotColor}33`,
+                  borderLeft: `3px solid ${dotColor}`,
+                  borderRadius: 8, marginBottom: 20, padding: "14px 18px",
+                }}>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: b.content ? 10 : 0 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 16, color: dotColor, fontStyle: "italic", fontWeight: 600 }}>{b.title}</div>
+                      <div style={{ fontSize: 12, color: "#8888aa", marginTop: 2 }}>
+                        {b.type}{b.speaker && b.speaker !== "—" ? ` · ${b.speaker}` : ""}
+                        {b.duration ? ` · ${b.duration} min` : ""}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 9, padding: "1px 8px", borderRadius: 99, border: `1px solid ${dotColor}`, color: dotColor, textTransform: "uppercase", letterSpacing: "0.1em" }}>bit</span>
+                  </div>
+                  {b.content && (
+                    <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: 13, lineHeight: 1.7, color: "#d0d0e8", fontFamily: "sans-serif" }}>{b.content}</pre>
+                  )}
+                </div>
+              );
+            }
+            const song = e.song;
+            const n = sIdx++;
+            return (
+              <div key={song.id ?? i} id={`chart-song-${n}`} data-song-idx={n}>
+                <SongCard song={song} index={n} showChords={showChords} editUrl={`${APP_URL}?editSong=${song.id}`} />
+              </div>
+            );
+          });
+        })()}
       </main>
 
       {/* Floating song navigation */}
-      {songList.length > 1 && (
+      {songEntries.length > 1 && (
         <div className="no-print" style={{
           position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)",
           display: "flex", background: "rgba(19,19,42,0.93)", backdropFilter: "blur(10px)",
@@ -256,12 +324,12 @@ export default function ChartsPage({ showId, songId }) {
           boxShadow: "0 4px 24px rgba(0,0,0,0.5)", zIndex: 100,
         }}>
           {[
-            { label: "← Prev", disabled: currentIdx === 0, onClick: () => scrollToSong(currentIdx - 1) },
+            { label: "← Prev", disabled: currentSongIdx === 0, onClick: () => scrollToSong(currentSongIdx - 1) },
             { label: "↑ Top",  disabled: false,             onClick: () => {
               document.getElementById("root")?.scrollTo({ top: 0, behavior: "smooth" });
               window.scrollTo({ top: 0, behavior: "smooth" });
             }},
-            { label: "Next →", disabled: currentIdx === songList.length - 1, onClick: () => scrollToSong(currentIdx + 1) },
+            { label: "Next →", disabled: currentSongIdx === songEntries.length - 1, onClick: () => scrollToSong(currentSongIdx + 1) },
           ].map(({ label, disabled, onClick }) => (
             <button key={label} onClick={onClick} disabled={disabled} style={{
               padding: "10px 18px", border: "none", background: "transparent",
