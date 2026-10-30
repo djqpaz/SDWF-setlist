@@ -3,6 +3,20 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
+## 2026-10-30 — Band Charts & Prompter improvements
+
+### Band Charts — Edit chart link
+- **✎ Edit chart** link on every song card in Band Charts opens the main app
+  with the chart editor for that song already open — no hunting through Song
+  Manager. Hidden from print.
+
+### Web Prompter — responsive layout
+- **iPad landscape**: song list is a permanent side panel; tap any song to jump
+  to it without leaving the chart view.
+- **iPad portrait / iPhone**: song list collapses to a slide-over overlay
+  (tap ☰, then tap a song to jump, or tap outside to dismiss).
+- Orientation changes switch modes live — no reload needed.
+
 ## 2026-10-29 — Web Prompter rebuild, set list lock & band charts nav
 
 ### Web Prompter — section-by-section navigation (complete rebuild)
