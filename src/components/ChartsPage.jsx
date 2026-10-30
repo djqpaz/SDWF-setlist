@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { doc, onSnapshot, collection } from "firebase/firestore";
+import { doc, onSnapshot, collection, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 // Chord regex for distinguishing chord tokens from section labels
@@ -115,6 +115,9 @@ export default function ChartsPage({ showId, songId }) {
   const [loading, setLoading] = useState(true);
   const [showChords, setShowChords] = useState(true);
   const [currentSongIdx, setCurrentSongIdx] = useState(0);
+  const [editingBit, setEditingBit] = useState(null); // bit id
+  const [editBitFields, setEditBitFields] = useState({});
+  const [savingBit, setSavingBit] = useState(false);
 
   useEffect(() => {
     document.documentElement.style.overflow = "auto";
@@ -151,7 +154,7 @@ export default function ChartsPage({ showId, songId }) {
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "cameronBits"), snap => {
       const map = {};
-      snap.forEach(d => { map[d.id] = d.data(); });
+      snap.forEach(d => { map[d.id] = { id: d.id, ...d.data() }; });
       setBits(map);
     });
     return unsub;
@@ -193,6 +196,119 @@ export default function ChartsPage({ showId, songId }) {
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  function openBitEditor(bit) {
+    setEditBitFields({
+      title: bit.title || "",
+      type: bit.type || "Narration",
+      speaker: bit.speaker || "",
+      content: bit.content || "",
+      duration: bit.duration || "",
+    });
+    setEditingBit(bit.id);
+  }
+
+  async function saveBit() {
+    if (!editingBit) return;
+    setSavingBit(true);
+    try {
+      const speakers = editBitFields.speaker
+        ? editBitFields.speaker.split(",").map(s => s.trim()).filter(Boolean)
+        : [];
+      await updateDoc(doc(db, "cameronBits", editingBit), {
+        title: editBitFields.title,
+        type: editBitFields.type,
+        speaker: editBitFields.speaker,
+        speakers,
+        content: editBitFields.content,
+        duration: editBitFields.duration ? Number(editBitFields.duration) : 0,
+      });
+      setEditingBit(null);
+    } finally {
+      setSavingBit(false);
+    }
+  }
+
+  const BIT_TYPES = ["Narration", "Emcee", "LX / cue", "Wardrobe", "Transition"];
+  const DOT_COLORS = { "Narration": "#4ecdc4", "Emcee": "#ff6b6b", "LX / cue": "#f4c542", "Wardrobe": "#9b8ec4", "Transition": "#8888aa" };
+
+  const BitEditorModal = editingBit ? (() => {
+    const dotColor = DOT_COLORS[editBitFields.type] || "#4ecdc4";
+    return (
+      <div style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)",
+        display: "flex", alignItems: "flex-end", justifyContent: "center",
+        zIndex: 10002,
+      }} onClick={() => setEditingBit(null)}>
+        <div onClick={e => e.stopPropagation()} style={{
+          background: "#1e1e34", borderRadius: "12px 12px 0 0",
+          width: "100%", maxWidth: 700, maxHeight: "90vh",
+          display: "flex", flexDirection: "column",
+          border: "1px solid #2a2a4a", borderBottom: "none",
+        }}>
+          {/* Editor header */}
+          <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid #2a2a4a", display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 99, border: `1px solid ${dotColor}`, color: dotColor, textTransform: "uppercase", letterSpacing: "0.1em" }}>Edit Bit</span>
+            <div style={{ flex: 1, fontSize: 14, color: "#f7f7f7", fontStyle: "italic" }}>{editBitFields.title || "Untitled"}</div>
+            <button onClick={() => setEditingBit(null)} style={{ background: "none", border: "none", color: "#8888aa", fontSize: 22, cursor: "pointer", padding: "0 4px", lineHeight: 1 }}>×</button>
+          </div>
+
+          <div style={{ overflowY: "auto", padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+            {/* Title + Type row */}
+            <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, color: "#8888aa", display: "block", marginBottom: 4 }}>Title</label>
+                <input value={editBitFields.title} onChange={e => setEditBitFields(f => ({ ...f, title: e.target.value }))}
+                  style={{ width: "100%", background: "#13132a", border: "1px solid #2a2a4a", borderRadius: 6, color: "#f7f7f7", padding: "8px 10px", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: "#8888aa", display: "block", marginBottom: 4 }}>Type</label>
+                <select value={editBitFields.type} onChange={e => setEditBitFields(f => ({ ...f, type: e.target.value }))}
+                  style={{ background: "#13132a", border: "1px solid #2a2a4a", borderRadius: 6, color: "#f7f7f7", padding: "8px 10px", fontSize: 13, fontFamily: "inherit" }}>
+                  {BIT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Speaker + Duration row */}
+            <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, color: "#8888aa", display: "block", marginBottom: 4 }}>Speakers (comma separated)</label>
+                <input value={editBitFields.speaker} onChange={e => setEditBitFields(f => ({ ...f, speaker: e.target.value }))}
+                  placeholder="e.g. Brett, Spencer"
+                  style={{ width: "100%", background: "#13132a", border: "1px solid #2a2a4a", borderRadius: 6, color: "#f7f7f7", padding: "8px 10px", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ width: 80 }}>
+                <label style={{ fontSize: 11, color: "#8888aa", display: "block", marginBottom: 4 }}>Duration (min)</label>
+                <input type="number" min="0" value={editBitFields.duration} onChange={e => setEditBitFields(f => ({ ...f, duration: e.target.value }))}
+                  style={{ width: "100%", background: "#13132a", border: "1px solid #2a2a4a", borderRadius: 6, color: "#f7f7f7", padding: "8px 10px", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box" }} />
+              </div>
+            </div>
+
+            {/* Script content */}
+            <div>
+              <label style={{ fontSize: 11, color: "#8888aa", display: "block", marginBottom: 4 }}>Script / notes</label>
+              <textarea value={editBitFields.content} onChange={e => setEditBitFields(f => ({ ...f, content: e.target.value }))}
+                rows={16}
+                style={{ width: "100%", background: "#13132a", border: "1px solid #2a2a4a", borderRadius: 6, color: "#d0d0e8", padding: "10px 12px", fontSize: 13, lineHeight: 1.7, fontFamily: "sans-serif", resize: "vertical", boxSizing: "border-box" }} />
+            </div>
+
+            {/* Save / Cancel */}
+            <div style={{ display: "flex", gap: 10, paddingBottom: 8 }}>
+              <button onClick={saveBit} disabled={savingBit} style={{
+                flex: 1, padding: "10px", background: "#4ecdc4", border: "none", borderRadius: 6,
+                color: "#0d1a19", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit",
+              }}>{savingBit ? "Saving…" : "Save"}</button>
+              <button onClick={() => setEditingBit(null)} style={{
+                padding: "10px 18px", background: "none", border: "1px solid #2a2a4a", borderRadius: 6,
+                color: "#8888aa", fontSize: 14, cursor: "pointer", fontFamily: "inherit",
+              }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  })() : null;
+
   if (loading) return (
     <div style={{ minHeight: "100dvh", background: "#1a1a2e", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif" }}>
       <div style={{ color: "#8888aa", fontSize: 13 }}>Oh Yeah… 🎹</div>
@@ -220,6 +336,7 @@ export default function ChartsPage({ showId, songId }) {
 
   return (
     <div style={{ minHeight: "100dvh", background: "#1a1a2e", color: "#f7f7f7", fontFamily: "sans-serif" }}>
+      {BitEditorModal}
       {/* Header */}
       <header style={{ background: "#13132a", borderBottom: "1px solid #2a2a4a", padding: "20px 24px", textAlign: "center" }}>
         <div style={{ fontSize: 11, color: "#ff6b6b", fontWeight: "bold", letterSpacing: "0.2em", textTransform: "uppercase" }}>
@@ -297,6 +414,11 @@ export default function ChartsPage({ showId, songId }) {
                       </div>
                     </div>
                     <span style={{ fontSize: 9, padding: "1px 8px", borderRadius: 99, border: `1px solid ${dotColor}`, color: dotColor, textTransform: "uppercase", letterSpacing: "0.1em" }}>bit</span>
+                    <button
+                      className="no-print"
+                      onClick={() => openBitEditor(b)}
+                      style={{ fontSize: 11, color: "#8888aa", border: "1px solid #2a2a4a", borderRadius: 4, padding: "2px 8px", background: "none", cursor: "pointer", fontFamily: "inherit" }}
+                    >✎ Edit bit</button>
                   </div>
                   {b.content && (
                     <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: 13, lineHeight: 1.7, color: "#d0d0e8", fontFamily: "sans-serif" }}>{b.content}</pre>
