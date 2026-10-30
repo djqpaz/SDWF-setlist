@@ -43,13 +43,15 @@ export default function App() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // Handle ?editSong=ID deep-link from Band Charts page
+  const [returnTo, setReturnTo] = useState(null);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("editSong");
+    const back = params.get("returnTo");
     if (id) {
       setShowAdmin(true);
       setEditSongId(id);
-      // Clean the URL without reloading
+      if (back) setReturnTo(back);
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
@@ -495,7 +497,7 @@ export default function App() {
             onClose={() => setShowGenerate(false)}
           />
         )}
-        {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} onToast={showToast} initialSongId={editSongId} />}
+        {showAdmin && <SongAdmin onClose={() => { setShowAdmin(false); if (returnTo) window.location.href = returnTo; }} onToast={showToast} initialSongId={editSongId} />}
         {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
         {confirmDialog && (
           <ConfirmDialog
@@ -699,7 +701,7 @@ export default function App() {
       {showGenerate && (
         <GenerateModal currentSongIds={activeShow.songIds} onGenerate={setSongIds} onDuplicate={duplicateShowWithSongs} onClose={() => setShowGenerate(false)} />
       )}
-      {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} onToast={showToast} initialSongId={editSongId} />}
+      {showAdmin && <SongAdmin onClose={() => { setShowAdmin(false); if (returnTo) window.location.href = returnTo; }} onToast={showToast} initialSongId={editSongId} />}
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
       {confirmDialog && (
         <ConfirmDialog

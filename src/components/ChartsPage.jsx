@@ -74,7 +74,7 @@ function SongCard({ song, index, showChords, editUrl }) {
                 className="no-print"
                 onClick={() => {
                   if (window.confirm("Chart editor — band use only.\n\nAre you Kenny or Dave?\n\nIf not, please hit Cancel.")) {
-                    window.location.href = editUrl;
+                    window.location.href = editUrl + "&returnTo=" + encodeURIComponent(window.location.href);
                   }
                 }}
                 style={{ fontSize: 11, color: "#8888aa", border: "1px solid #2a2a4a", borderRadius: 4, padding: "2px 8px", background: "none", cursor: "pointer", marginLeft: "auto", fontFamily: "inherit" }}
