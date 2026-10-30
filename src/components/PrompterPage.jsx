@@ -60,11 +60,12 @@ function SectionContent({ lines }) {
 }
 
 export default function PrompterPage({ showId }) {
-  const [show, setShow]       = useState(null);
-  const [songs, setSongs]     = useState({});
-  const [songIdx, setSongIdx] = useState(0);
-  const [secIdx, setSecIdx]   = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [show, setShow]           = useState(null);
+  const [songs, setSongs]         = useState({});
+  const [songIdx, setSongIdx]     = useState(0);
+  const [secIdx, setSecIdx]       = useState(0);
+  const [loading, setLoading]     = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const touchStartX = useRef(null);
   const contentRef  = useRef(null);
 
@@ -157,14 +158,26 @@ export default function PrompterPage({ showId }) {
       display:"flex", flexDirection:"column", height:"100dvh",
       background:"#0d0d1a", color:"#f0f0f0", overflow:"hidden",
       fontFamily:"ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-      userSelect:"none",
+      userSelect:"none", position:"relative",
     }}>
 
       {/* ── Header ── */}
       <div style={{
-        display:"flex", alignItems:"center", gap:10, padding:"10px 18px",
+        display:"flex", alignItems:"center", gap:10, padding:"10px 14px",
         background:"#0a0a18", borderBottom:"1px solid #1e1e3a", flexShrink:0,
       }}>
+        {/* Sidebar toggle */}
+        <button
+          onClick={() => setSidebarOpen(o => !o)}
+          style={{
+            background: sidebarOpen ? "#1a2a2a" : "none",
+            border: `1px solid ${sidebarOpen ? "#2a6e6b" : "#252545"}`,
+            color: sidebarOpen ? "#4ecdc4" : "#555570",
+            borderRadius:6, padding:"5px 9px", cursor:"pointer",
+            fontSize:14, flexShrink:0, lineHeight:1, fontFamily:"inherit",
+          }}
+          title={sidebarOpen ? "Hide set list" : "Show set list"}
+        >☰</button>
         <span style={{ fontSize:11, color:"#4ecdc4", fontWeight:"bold", fontVariantNumeric:"tabular-nums", flexShrink:0 }}>
           {songIdx + 1}&nbsp;/&nbsp;{songList.length}
         </span>
@@ -180,6 +193,64 @@ export default function PrompterPage({ showId }) {
           <span style={{ fontSize:12, color:"#555570", flexShrink:0 }}>{song.bpm} BPM</span>
         )}
       </div>
+
+      {/* ── Song list sidebar (collapsible overlay) ── */}
+      {sidebarOpen && (
+        <div style={{
+          position:"absolute", top:0, left:0, bottom:0, zIndex:50,
+          display:"flex", flexDirection:"column",
+          width: "min(280px, 80vw)",
+          background:"#080814", borderRight:"1px solid #1e1e3a",
+          boxShadow:"4px 0 24px rgba(0,0,0,0.6)",
+        }}>
+          {/* Sidebar header */}
+          <div style={{
+            display:"flex", alignItems:"center", justifyContent:"space-between",
+            padding:"12px 14px", borderBottom:"1px solid #1e1e3a",
+            background:"#0a0a18", flexShrink:0,
+          }}>
+            <span style={{ fontSize:11, color:"#4ecdc4", fontWeight:"bold", letterSpacing:"0.12em" }}>
+              SET LIST
+            </span>
+            <button onClick={() => setSidebarOpen(false)} style={{
+              background:"none", border:"none", color:"#555570",
+              fontSize:18, cursor:"pointer", lineHeight:1, padding:"0 2px",
+            }}>✕</button>
+          </div>
+          {/* Song list */}
+          <div style={{ overflowY:"auto", flex:1, padding:"8px 0" }}>
+            {songList.map((s, i) => (
+              <div
+                key={i}
+                onClick={() => { setSongIdx(i); setSecIdx(0); setSidebarOpen(false); }}
+                style={{
+                  display:"flex", alignItems:"baseline", gap:10,
+                  padding:"10px 14px", cursor:"pointer",
+                  background: i === songIdx ? "#0f2020" : "transparent",
+                  borderLeft: i === songIdx ? "3px solid #4ecdc4" : "3px solid transparent",
+                }}
+              >
+                <span style={{ fontSize:12, color: i === songIdx ? "#4ecdc4" : "#555570", fontVariantNumeric:"tabular-nums", minWidth:20, textAlign:"right", flexShrink:0 }}>
+                  {i + 1}
+                </span>
+                <span style={{ fontSize:15, color: i === songIdx ? "#f0f0f0" : "#9090b0", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                  {s.title}
+                </span>
+                {s.key && (
+                  <span style={{ fontSize:11, color:"#2a6e6b", flexShrink:0 }}>{s.key}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* Tap-away backdrop */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{ position:"absolute", inset:0, zIndex:49, background:"rgba(0,0,0,0.4)" }}
+        />
+      )}
 
       {/* ── Note bar ── */}
       {song.note && (
