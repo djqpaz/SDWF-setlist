@@ -27,12 +27,10 @@ function parseSections(chart, note) {
     }
   }
   if (cur.label !== null || cur.lines.some(ln => ln.trim())) sections.push(cur);
-  // If no section markers, treat whole chart as one unlabeled section
   return sections.length ? sections : [{ label: null, subtitle: null, lines }];
 }
 
 function SectionContent({ lines }) {
-  // Trim leading/trailing blank lines
   const first = lines.findIndex(l => l.trim());
   const last  = lines.length - 1 - [...lines].reverse().findIndex(l => l.trim());
   const trimmed = first < 0 ? [] : lines.slice(first, last + 1);
@@ -59,6 +57,39 @@ function SectionContent({ lines }) {
   });
 }
 
+// Cameron Bit full-screen view
+function BitContent({ bit }) {
+  const typeColors = {
+    "Narration":  "#4ecdc4",
+    "Emcee":      "#ff6b6b",
+    "LX / cue":   "#f4c542",
+    "Wardrobe":   "#9b8ec4",
+    "Transition": "#666688",
+  };
+  const accentColor = typeColors[bit.type] || "#4ecdc4";
+
+  return (
+    <div style={{ padding: "24px 28px", height: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
+      <div style={{
+        display: "inline-block", marginBottom: 16,
+        background: "#0a1a1a", border: `1px solid ${accentColor}`,
+        borderRadius: 4, padding: "3px 14px",
+        fontSize: 11, color: accentColor, letterSpacing: "0.15em", fontWeight: "bold",
+      }}>
+        {bit.type.toUpperCase()}{bit.speaker && bit.speaker !== "—" ? ` — ${bit.speaker}` : ""}
+        {bit.duration ? ` · ${bit.duration} min` : ""}
+      </div>
+      {bit.content ? (
+        <div style={{ fontSize: "clamp(20px,3.5vw,28px)", lineHeight: 1.6, color: "#e8e8f0", whiteSpace: "pre-wrap", fontFamily: "inherit" }}>
+          {bit.content}
+        </div>
+      ) : (
+        <div style={{ color: "#333358", fontStyle: "italic", fontSize: 18, marginTop: 16 }}>No script for this bit.</div>
+      )}
+    </div>
+  );
+}
+
 function useIsWide() {
   const [isWide, setIsWide] = useState(() => window.innerWidth >= 768);
   useEffect(() => {
@@ -73,7 +104,8 @@ function useIsWide() {
 export default function PrompterPage({ showId }) {
   const [show, setShow]           = useState(null);
   const [songs, setSongs]         = useState({});
-  const [songIdx, setSongIdx]     = useState(0);
+  const [bits, setBits]           = useState({});
+  const [entryIdx, setEntryIdx]   = useState(0);
   const [secIdx, setSecIdx]       = useState(0);
   const [loading, setLoading]     = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -115,34 +147,56 @@ export default function PrompterPage({ showId }) {
     return unsub;
   }, []);
 
-  const songList = useMemo(
-    () => (show?.songIds || []).map(id => songs[String(id)] || songs[id]).filter(Boolean),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [show?.songIds?.join(","), songs]
-  );
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "cameronBits"), snap => {
+      const map = {};
+      snap.forEach(d => { map[d.id] = d.data(); });
+      setBits(map);
+    });
+    return unsub;
+  }, []);
 
-  const song     = songList[songIdx];
+  // Build ordered entries list from show.items (or fall back to songIds)
+  const entries = useMemo(() => {
+    if (!show) return [];
+    const rawItems = show.items || (show.songIds || []).map(id => ({ type: "song", id }));
+    return rawItems.map(item => {
+      if (item.type === "cameron") {
+        const bit = bits[item.id];
+        if (!bit) return null;
+        return { type: "cameron", bit };
+      }
+      const song = songs[String(item.id)] || songs[item.id];
+      if (!song) return null;
+      return { type: "song", song };
+    }).filter(Boolean);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [show?.items, show?.songIds, songs, bits]);
+
+  const entry = entries[entryIdx];
+  const isSongEntry = entry?.type === "song";
+  const song = isSongEntry ? entry.song : null;
+  const bit  = !isSongEntry ? entry?.bit : null;
+
   const sections = useMemo(() => parseSections(song?.chart, song?.note), [song?.chart, song?.note]);
 
-  // Reset to section 0 when song changes
-  useEffect(() => { setSecIdx(0); }, [songIdx]);
-  // Clamp secIdx if sections shrink
+  // Reset section when entry changes
+  useEffect(() => { setSecIdx(0); }, [entryIdx]);
   useEffect(() => { if (sections.length && secIdx >= sections.length) setSecIdx(sections.length - 1); }, [sections.length]);
-  // Scroll content to top when section changes
-  useEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [songIdx, secIdx]);
+  useEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [entryIdx, secIdx]);
 
-  const isFirst = songIdx === 0 && secIdx === 0;
-  const isLast  = songIdx === songList.length - 1 && secIdx >= Math.max(0, sections.length - 1);
+  const isFirst = entryIdx === 0 && secIdx === 0;
+  const isLast  = entryIdx === entries.length - 1 && (isSongEntry ? secIdx >= Math.max(0, sections.length - 1) : true);
 
   const goNext = useCallback(() => {
-    if (secIdx < sections.length - 1) { setSecIdx(s => s + 1); }
-    else if (songIdx < songList.length - 1) { setSongIdx(s => s + 1); setSecIdx(0); }
-  }, [secIdx, sections.length, songIdx, songList.length]);
+    if (isSongEntry && secIdx < sections.length - 1) { setSecIdx(s => s + 1); }
+    else if (entryIdx < entries.length - 1) { setEntryIdx(s => s + 1); setSecIdx(0); }
+  }, [isSongEntry, secIdx, sections.length, entryIdx, entries.length]);
 
   const goPrev = useCallback(() => {
-    if (secIdx > 0) { setSecIdx(s => s - 1); }
-    else if (songIdx > 0) { setSongIdx(s => s - 1); setSecIdx(0); }
-  }, [secIdx, songIdx]);
+    if (isSongEntry && secIdx > 0) { setSecIdx(s => s - 1); }
+    else if (entryIdx > 0) { setEntryIdx(s => s - 1); setSecIdx(0); }
+  }, [isSongEntry, secIdx, entryIdx]);
 
   useEffect(() => {
     function onKey(e) {
@@ -156,19 +210,26 @@ export default function PrompterPage({ showId }) {
   if (loading) return (
     <div style={{ height:"100dvh", background:"#0d0d1a", display:"flex", alignItems:"center", justifyContent:"center", color:"#4ecdc4", fontFamily:"monospace", fontSize:16 }}>Oh Yeah… 🎹</div>
   );
-  if (!show || songList.length === 0) return (
+  if (!show || entries.length === 0) return (
     <div style={{ height:"100dvh", background:"#0d0d1a", display:"flex", alignItems:"center", justifyContent:"center", color:"#666688", fontFamily:"monospace", fontSize:16 }}>
       {!show ? "Show not found." : "No songs in this set."}
     </div>
   );
 
-  const curSection  = sections[secIdx];
-  const nextSection = sections[secIdx + 1];
-  const nextSong    = songList[songIdx + 1];
+  const curSection  = isSongEntry ? sections[secIdx] : null;
+  const nextEntry   = entries[entryIdx + 1];
+  const nextSection = isSongEntry ? sections[secIdx + 1] : null;
   const upNext = nextSection
     ? { label: nextSection.label, isSong: false }
-    : nextSong ? { label: nextSong.title, key: nextSong.key, isSong: true }
-    : null;
+    : nextEntry
+      ? nextEntry.type === "cameron"
+        ? { label: nextEntry.bit.title, isBit: true }
+        : { label: nextEntry.song.title, key: nextEntry.song.key, isSong: true }
+      : null;
+
+  // Count only songs for the numbering
+  let songCount = 0;
+  const entrySongIndex = entries.slice(0, entryIdx + 1).filter(e => e.type === "song").length;
 
   return (
     <div style={{
@@ -183,7 +244,6 @@ export default function PrompterPage({ showId }) {
         display:"flex", alignItems:"center", gap:10, padding:"10px 14px",
         background:"#0a0a18", borderBottom:"1px solid #1e1e3a", flexShrink:0,
       }}>
-        {/* Sidebar toggle */}
         <button
           onClick={() => setSidebarOpen(o => !o)}
           style={{
@@ -196,25 +256,30 @@ export default function PrompterPage({ showId }) {
           title={sidebarOpen ? "Hide set list" : "Show set list"}
         >☰</button>
         <span style={{ fontSize:11, color:"#4ecdc4", fontWeight:"bold", fontVariantNumeric:"tabular-nums", flexShrink:0 }}>
-          {songIdx + 1}&nbsp;/&nbsp;{songList.length}
+          {entryIdx + 1}&nbsp;/&nbsp;{entries.length}
         </span>
-        <span style={{ fontSize:20, fontWeight:"bold", color:"#f0f0f0", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-          {song.title}
+        <span style={{ fontSize:20, fontWeight:"bold", color: isSongEntry ? "#f0f0f0" : "#4ecdc4", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+          {isSongEntry ? song.title : bit.title}
         </span>
-        {song.key && (
+        {isSongEntry && song.key && (
           <span style={{ fontSize:13, fontWeight:"bold", padding:"2px 10px", borderRadius:99, background:"#132626", border:"1px solid #2a6e6b", color:"#4ecdc4", flexShrink:0 }}>
             {song.key}
           </span>
         )}
-        {song.bpm && (
+        {isSongEntry && song.bpm && (
           <span style={{ fontSize:12, color:"#555570", flexShrink:0 }}>{song.bpm} BPM</span>
+        )}
+        {!isSongEntry && (
+          <span style={{ fontSize:11, color:"#666688", padding:"2px 10px", borderRadius:99, border:"1px solid #333348", flexShrink:0 }}>
+            {bit.type}
+          </span>
         )}
       </div>
 
       {/* ── Body: sidebar + main content ── */}
       <div style={{ flex:1, display:"flex", overflow:"hidden", position:"relative" }}>
 
-        {/* Sidebar — persistent column on wide, overlay on narrow */}
+        {/* Sidebar */}
         {sidebarOpen && (
           <div style={{
             display:"flex", flexDirection:"column",
@@ -227,7 +292,6 @@ export default function PrompterPage({ showId }) {
               boxShadow:"4px 0 24px rgba(0,0,0,0.6)",
             }),
           }}>
-            {/* Sidebar header — only show ✕ on narrow (overlay mode) */}
             <div style={{
               display:"flex", alignItems:"center", justifyContent:"space-between",
               padding:"10px 14px", borderBottom:"1px solid #1e1e3a",
@@ -241,36 +305,44 @@ export default function PrompterPage({ showId }) {
                 }}>✕</button>
               )}
             </div>
-            {/* Song rows */}
             <div style={{ overflowY:"auto", flex:1, padding:"6px 0" }}>
-              {songList.map((s, i) => (
-                <div
-                  key={i}
-                  onClick={() => { setSongIdx(i); setSecIdx(0); if (!isWide) setSidebarOpen(false); }}
-                  style={{
-                    display:"flex", alignItems:"center", gap:8,
-                    padding: isWide ? "8px 12px" : "10px 14px",
-                    cursor:"pointer",
-                    background: i === songIdx ? "#0f2020" : "transparent",
-                    borderLeft: i === songIdx ? "3px solid #4ecdc4" : "3px solid transparent",
-                  }}
-                >
-                  <span style={{ fontSize:11, color: i === songIdx ? "#4ecdc4" : "#444468", fontVariantNumeric:"tabular-nums", minWidth:18, textAlign:"right", flexShrink:0 }}>
-                    {i + 1}
-                  </span>
-                  <span style={{ fontSize: isWide ? 13 : 15, color: i === songIdx ? "#f0f0f0" : "#8080a0", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                    {s.title}
-                  </span>
-                  {s.key && (
-                    <span style={{ fontSize:10, color:"#2a6e6b", flexShrink:0 }}>{s.key}</span>
-                  )}
-                </div>
-              ))}
+              {entries.map((e, i) => {
+                const isCurrent = i === entryIdx;
+                const isBit = e.type === "cameron";
+                const label = isBit ? e.bit.title : e.song.title;
+                const key   = !isBit ? e.song.key : null;
+                return (
+                  <div
+                    key={i}
+                    onClick={() => { setEntryIdx(i); setSecIdx(0); if (!isWide) setSidebarOpen(false); }}
+                    style={{
+                      display:"flex", alignItems:"center", gap:8,
+                      padding: isWide ? "8px 12px" : "10px 14px",
+                      cursor:"pointer",
+                      background: isCurrent ? "#0f2020" : "transparent",
+                      borderLeft: isCurrent ? "3px solid #4ecdc4" : isBit ? "3px solid #2a4a4a" : "3px solid transparent",
+                    }}
+                  >
+                    {isBit ? (
+                      <span style={{ fontSize:9, color: isCurrent ? "#4ecdc4" : "#2a4a4a", minWidth:18, textAlign:"right", flexShrink:0 }}>✦</span>
+                    ) : (
+                      <span style={{ fontSize:11, color: isCurrent ? "#4ecdc4" : "#444468", fontVariantNumeric:"tabular-nums", minWidth:18, textAlign:"right", flexShrink:0 }}>
+                        {entries.slice(0, i + 1).filter(x => x.type === "song").length}
+                      </span>
+                    )}
+                    <span style={{ fontSize: isWide ? 13 : 15, color: isCurrent ? "#f0f0f0" : isBit ? "#2a6e6b" : "#8080a0", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontStyle: isBit ? "italic" : "normal" }}>
+                      {label}
+                    </span>
+                    {key && (
+                      <span style={{ fontSize:10, color:"#2a6e6b", flexShrink:0 }}>{key}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Tap-away backdrop — only in overlay/narrow mode */}
         {sidebarOpen && !isWide && (
           <div
             onClick={() => setSidebarOpen(false)}
@@ -281,15 +353,15 @@ export default function PrompterPage({ showId }) {
         {/* ── Main content column ── */}
         <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0 }}>
 
-          {/* Note bar */}
-          {song.note && (
+          {/* Note bar — songs only */}
+          {isSongEntry && song.note && (
             <div style={{ padding:"6px 18px", background:"#140f00", borderBottom:"1px solid #3a2800", fontSize:13, color:"#f4c542", flexShrink:0, lineHeight:1.4 }}>
               {song.note}
             </div>
           )}
 
-          {/* Section label */}
-          {curSection?.label && (
+          {/* Section label — songs only */}
+          {isSongEntry && curSection?.label && (
             <div style={{ padding:"7px 18px", background:"#091a1a", borderBottom:"1px solid #0e3030", flexShrink:0, display:"flex", alignItems:"baseline", gap:10 }}>
               <span style={{ background:"#0f2e2e", color:"#4ecdc4", borderLeft:"4px solid #4ecdc4", padding:"3px 16px", fontSize:15, letterSpacing:"0.12em", fontWeight:"bold" }}>
                 {curSection.label}
@@ -300,10 +372,10 @@ export default function PrompterPage({ showId }) {
             </div>
           )}
 
-          {/* Chart content */}
+          {/* Chart content / Cameron Bit content */}
           <div
             ref={contentRef}
-            style={{ flex:1, overflowY:"auto", padding:"18px 22px 10px", WebkitOverflowScrolling:"touch" }}
+            style={{ flex:1, overflowY:"auto", padding: isSongEntry ? "18px 22px 10px" : 0, WebkitOverflowScrolling:"touch" }}
             onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
             onTouchEnd={e => {
               if (touchStartX.current == null) return;
@@ -312,10 +384,14 @@ export default function PrompterPage({ showId }) {
               if (Math.abs(dx) > 60) { dx < 0 ? goNext() : goPrev(); }
             }}
           >
-            {curSection ? (
-              <SectionContent lines={curSection.lines} />
+            {isSongEntry ? (
+              curSection ? (
+                <SectionContent lines={curSection.lines} />
+              ) : (
+                <div style={{ color:"#444460", fontStyle:"italic", fontSize:18, marginTop:24 }}>No chart for this song.</div>
+              )
             ) : (
-              <div style={{ color:"#444460", fontStyle:"italic", fontSize:18, marginTop:24 }}>No chart for this song.</div>
+              <BitContent bit={bit} />
             )}
           </div>
 
@@ -323,10 +399,11 @@ export default function PrompterPage({ showId }) {
           <div style={{ padding:"5px 18px", background:"#080810", borderTop:"1px solid #111126", flexShrink:0, minHeight:28, display:"flex", alignItems:"center", gap:6 }}>
             {upNext ? (
               <span style={{ fontSize:12, color:"#2a2a50" }}>
-                {upNext.isSong ? "↓ Next song: " : "↓ "}<span style={{ color:"#2a3a4a" }}>{upNext.label}</span>
+                {upNext.isBit ? "↓ Cameron Bit: " : upNext.isSong ? "↓ Next song: " : "↓ "}
+                <span style={{ color: upNext.isBit ? "#1a4a3a" : "#2a3a4a" }}>{upNext.label}</span>
                 {upNext.key && <span style={{ color:"#1a4a3a", marginLeft:8 }}>Key {upNext.key}</span>}
               </span>
-            ) : songList.length > 0 ? (
+            ) : entries.length > 0 ? (
               <span style={{ fontSize:11, color:"#1a4a3a", letterSpacing:"0.1em" }}>
                 Danke Schoen… and goodnight.
                 <span style={{ display:"block", fontSize:10, color:"#112a1a", marginTop:2, fontStyle:"italic" }}>
@@ -348,7 +425,7 @@ export default function PrompterPage({ showId }) {
             }}>← Prev</button>
 
             <div style={{ flex:1, display:"flex", gap:5, justifyContent:"center", alignItems:"center", flexWrap:"wrap" }}>
-              {sections.length > 1 ? sections.map((s, i) => (
+              {isSongEntry && sections.length > 1 ? sections.map((s, i) => (
                 <div key={i} onClick={() => setSecIdx(i)} title={s.label || `Section ${i + 1}`} style={{
                   height:7, width: i === secIdx ? 22 : 7,
                   borderRadius:99, background: i === secIdx ? "#4ecdc4" : "#252545",
@@ -356,7 +433,7 @@ export default function PrompterPage({ showId }) {
                 }} />
               )) : (
                 <span style={{ fontSize:11, color:"#333358", letterSpacing:"0.1em" }}>
-                  {sections.length === 1 && curSection?.label ? curSection.label : ""}
+                  {isSongEntry && sections.length === 1 && curSection?.label ? curSection.label : ""}
                 </span>
               )}
             </div>

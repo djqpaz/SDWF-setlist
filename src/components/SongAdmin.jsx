@@ -7,6 +7,7 @@ import { VIBE_COLORS } from "../data/songs";
 import { colors } from "../theme";
 import ChartEditor from "./ChartEditor";
 import BulkImportCharts from "./BulkImportCharts";
+import CameronBitManager from "./CameronBitManager";
 
 const VIBES = ["anthemic","epic","fun","groove","joy","love","nostalgia","pride","singalong","soulful","swagger","tension","uplift"];
 
@@ -112,6 +113,7 @@ function SongForm({ initial, onSave, onCancel, saving }) {
 
 export default function SongAdmin({ onClose, onToast, initialSongId }) {
   const { songs } = useSongs();
+  const [activeTab, setActiveTab] = useState("songs");
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [adding, setAdding] = useState(false);
@@ -182,48 +184,72 @@ export default function SongAdmin({ onClose, onToast, initialSongId }) {
       }}>
         {/* Header */}
         <div style={{
-          padding:"14px 20px", borderBottom:`1px solid ${colors.borderMed}`,
-          display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0,
+          padding:"14px 20px 0", borderBottom:`1px solid ${colors.borderMed}`,
+          flexShrink:0,
         }}>
-          <div>
-            <div style={{ fontSize:11, color:colors.textMuted, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:2 }}>
-              Song Manager
+          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:12 }}>
+            <div>
+              <div style={{ fontSize:11, color:colors.textMuted, letterSpacing:"0.2em", textTransform:"uppercase", marginBottom:2 }}>
+                Song Manager
+              </div>
+              <div style={{ fontSize:15, color:colors.textPrimary }}>
+                {activeTab === "songs" ? `${songs.length} songs in library` : "Show script bits"}
+              </div>
             </div>
-            <div style={{ fontSize:15, color:colors.textPrimary }}>{songs.length} songs in library</div>
+            <button onClick={onClose} style={{
+              background:"none", border:"none", color:colors.textMuted, cursor:"pointer", fontSize:22, lineHeight:1,
+            }}>×</button>
           </div>
-          <button onClick={onClose} style={{
-            background:"none", border:"none", color:colors.textMuted, cursor:"pointer", fontSize:22, lineHeight:1,
-          }}>×</button>
+          {/* Tabs */}
+          <div style={{ display:"flex", gap:0 }}>
+            {[["songs","Songs"],["cameron","Cameron Bits"]].map(([id, label]) => (
+              <button key={id} onClick={() => setActiveTab(id)} style={{
+                padding:"8px 18px", background:"none", border:"none",
+                borderBottom: activeTab === id ? `2px solid ${colors.teal}` : "2px solid transparent",
+                color: activeTab === id ? colors.teal : colors.textMuted,
+                cursor:"pointer", fontSize:12, fontFamily:"inherit", fontWeight: activeTab === id ? "bold" : "normal",
+                letterSpacing:"0.05em",
+              }}>{label}</button>
+            ))}
+          </div>
         </div>
 
-        {/* Toolbar */}
-        <div style={{
-          padding:"10px 20px", borderBottom:`1px solid ${colors.borderLight}`,
-          display:"flex", gap:10, flexShrink:0,
-        }}>
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search songs or artists…"
-            style={{
-              flex:1, background:colors.bgInput, border:`1px solid ${colors.borderMed}`,
-              color:colors.textPrimary, padding:"7px 12px", borderRadius:4,
-              fontSize:12, fontFamily:"inherit", outline:"none",
-            }}
-          />
-          <button onClick={() => setBulkImporting(true)} style={{
-            padding:"7px 14px", background:"transparent", border:`1px solid ${colors.borderTeal}`,
-            color: colors.teal, borderRadius:4, cursor:"pointer", fontSize:12,
-            fontFamily:"inherit", fontWeight:"bold", whiteSpace:"nowrap",
-          }}>Bulk Import Charts</button>
-          <button onClick={() => { setAdding(true); setEditingId(null); }} style={{
-            padding:"7px 14px", background:colors.teal, border:"none",
-            color: colors.onAccent, borderRadius:4, cursor:"pointer", fontSize:12,
-            fontFamily:"inherit", fontWeight:"bold", whiteSpace:"nowrap",
-          }}>+ Add Song</button>
-        </div>
+        {/* Songs Toolbar — only on songs tab */}
+        {activeTab === "songs" && (
+          <div style={{
+            padding:"10px 20px", borderBottom:`1px solid ${colors.borderLight}`,
+            display:"flex", gap:10, flexShrink:0,
+          }}>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search songs or artists…"
+              style={{
+                flex:1, background:colors.bgInput, border:`1px solid ${colors.borderMed}`,
+                color:colors.textPrimary, padding:"7px 12px", borderRadius:4,
+                fontSize:12, fontFamily:"inherit", outline:"none",
+              }}
+            />
+            <button onClick={() => setBulkImporting(true)} style={{
+              padding:"7px 14px", background:"transparent", border:`1px solid ${colors.borderTeal}`,
+              color: colors.teal, borderRadius:4, cursor:"pointer", fontSize:12,
+              fontFamily:"inherit", fontWeight:"bold", whiteSpace:"nowrap",
+            }}>Bulk Import Charts</button>
+            <button onClick={() => { setAdding(true); setEditingId(null); }} style={{
+              padding:"7px 14px", background:colors.teal, border:"none",
+              color: colors.onAccent, borderRadius:4, cursor:"pointer", fontSize:12,
+              fontFamily:"inherit", fontWeight:"bold", whiteSpace:"nowrap",
+            }}>+ Add Song</button>
+          </div>
+        )}
 
-        {/* Body */}
+        {/* Cameron Bits tab */}
+        {activeTab === "cameron" && (
+          <CameronBitManager onToast={onToast} />
+        )}
+
+        {/* Songs Body */}
+        {activeTab === "songs" && (
         <div style={{ flex:1, overflowY:"auto", padding:"12px 20px 24px" }}>
 
           {/* Add form */}
@@ -300,6 +326,7 @@ export default function SongAdmin({ onClose, onToast, initialSongId }) {
             );
           })}
         </div>
+        )}
       </div>
 
       {/* Delete confirm */}

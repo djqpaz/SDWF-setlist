@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import { SongsProvider } from "./context/SongsContext.jsx";
+import { CameronBitsProvider } from "./context/CameronBitsContext.jsx";
 import VotePage from "./components/VotePage.jsx";
 import SetlistPage from "./components/SetlistPage.jsx";
 import ChartsPage from "./components/ChartsPage.jsx";
@@ -46,7 +47,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <PrompterPage showId={prompterId} />
     ) : (
       <SongsProvider>
-        <App />
+        <CameronBitsProvider>
+          <App />
+        </CameronBitsProvider>
       </SongsProvider>
     )}
   </React.StrictMode>

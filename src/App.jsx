@@ -12,6 +12,7 @@ import ShowSetlist from "./components/ShowSetlist";
 import VotePanel from "./components/VotePanel";
 import SongAdmin from "./components/SongAdmin";
 import { Toast, ConfirmDialog } from "./components/Toast";
+import { useCameronBits } from "./context/CameronBitsContext";
 
 const BASE_URL = `${window.location.origin}${window.location.pathname}`;
 
@@ -27,6 +28,7 @@ const DEFAULT_SHOW = () => ({
 
 export default function App() {
   const { songs } = useSongs();
+  const { bits } = useCameronBits();
   const songMap = Object.fromEntries(songs.map(s => [s.id, s]));
   const [shows, setShows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +43,7 @@ export default function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [editSongId, setEditSongId] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [bitPickerOpen, setBitPickerOpen] = useState(false);
 
   // Handle ?editSong=ID deep-link from Band Charts page
   const [returnTo, setReturnTo] = useState(null);
@@ -94,8 +97,21 @@ export default function App() {
 
   const activeShow = shows.find(s => s.id === activeShowId) || shows[0];
 
+  // Normalize show to items array. Old shows have only songIds; new ones have items.
+  const showItems = activeShow
+    ? (activeShow.items || (activeShow.songIds || []).map(id => ({ type: "song", id })))
+    : [];
+  const showSongIds = showItems.filter(i => i.type === "song").map(i => i.id);
+
   function updateShow(id, updates) {
     updateDoc(doc(db, "shows", id), updates);
+  }
+
+  function setItems(items) {
+    updateShow(activeShow.id, {
+      items,
+      songIds: items.filter(i => i.type === "song").map(i => i.id),
+    });
   }
 
   function addShow() {
@@ -106,12 +122,14 @@ export default function App() {
   }
 
   function duplicateShowWithSongs(songIds) {
+    const items = songIds.map(id => ({ type: "song", id }));
     const s = {
       ...DEFAULT_SHOW(),
       name: `${activeShow.name} (alt)`,
       date: activeShow.date || "",
       venue: activeShow.venue || "",
       songIds,
+      items,
     };
     setDoc(doc(db, "shows", s.id), s);
     setActiveShowId(s.id);
@@ -129,24 +147,30 @@ export default function App() {
   }
 
   function setSongIds(ids) {
-    updateShow(activeShow.id, { songIds: ids });
+    setItems(ids.map(id => ({ type: "song", id })));
   }
 
   function addAllSongs(songIds) {
     if (activeShow.locked) { showToast("Save Ferris 🔒 — set is locked"); return; }
-    const existing = new Set(activeShow.songIds);
+    const existing = new Set(showSongIds);
     const toAdd = songIds.filter(id => !existing.has(id));
     if (toAdd.length === 0) return;
-    updateShow(activeShow.id, { songIds: [...activeShow.songIds, ...toAdd] });
+    setItems([...showItems, ...toAdd.map(id => ({ type: "song", id }))]);
     showToast(`Added ${toAdd.length} songs ✓`);
     if (isMobile) setMobileTab("setlist");
   }
 
   function addSong(songId) {
     if (activeShow.locked) { showToast("Save Ferris 🔒 — set is locked"); return; }
-    if (!activeShow.songIds.includes(songId)) {
-      updateShow(activeShow.id, { songIds: [...activeShow.songIds, songId] });
+    if (!showSongIds.includes(songId)) {
+      setItems([...showItems, { type: "song", id: songId }]);
     }
+  }
+
+  function addCameronBit(bitId) {
+    setItems([...showItems, { type: "cameron", id: bitId }]);
+    setBitPickerOpen(false);
+    showToast("Cameron Bit added to setlist ✓");
   }
 
   function toggleLocked() {
@@ -193,16 +217,18 @@ export default function App() {
   function closeVoting() {
     const votes = activeShow.voting?.songVotes || {};
     const played = new Set(activeShow.playedSongIds || []);
-    const unplayed = activeShow.songIds.filter(id => !played.has(id));
+    const unplayed = showSongIds.filter(id => !played.has(id));
     unplayed.sort((a, b) => {
       const va = votes[String(a)] || votes[a] || 0;
       const vb = votes[String(b)] || votes[b] || 0;
       if (vb !== va) return vb - va;
-      return activeShow.songIds.indexOf(a) - activeShow.songIds.indexOf(b);
+      return showSongIds.indexOf(a) - showSongIds.indexOf(b);
     });
     const newSongIds = [...(activeShow.playedSongIds || []), ...unplayed];
+    const newItems = newSongIds.map(id => ({ type: "song", id }));
     updateShow(activeShow.id, {
       songIds: newSongIds,
+      items: newItems,
       voting: { ...activeShow.voting, active: false, paused: false, endsAt: null, pausedRemaining: null },
     });
     showToast("Vote closed — setlist reordered ✓");
@@ -233,7 +259,7 @@ export default function App() {
     if (h > 0) return `${h}h ${m}m`;
     return `${m}m`;
   }
-  const totalDuration = calcTotalDuration(activeShow?.songIds || [], songMap);
+  const totalDuration = calcTotalDuration(showSongIds, songMap);
 
   if (loading) return (
     <div style={{
@@ -248,7 +274,7 @@ export default function App() {
   if (!activeShow) return null;
 
   // ── Shared meta bar ────────────────────────────────────────────────────
-  const hasSet = activeShow.songIds.length > 0;
+  const hasSet = showItems.length > 0;
 
   const metaBar = (
     <div style={{
@@ -274,7 +300,7 @@ export default function App() {
       {/* Row 2: action buttons — desktop only */}
       {!isMobile && (
         <div style={{ padding: "4px 16px 8px", display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 12, color: colors.textMuted, marginRight: 4 }}>{activeShow.songIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}</span>
+          <span style={{ fontSize: 12, color: colors.textMuted, marginRight: 4 }}>{showSongIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}</span>
           <a
             href={hasSet ? `${BASE_URL}?charts=${activeShow.id}` : undefined}
             target="_blank" rel="noopener noreferrer"
@@ -381,10 +407,10 @@ export default function App() {
                 fontWeight: "bold", letterSpacing: "0.05em", opacity: activeShow.locked ? 0.4 : 1,
               }}>✦ Generate Set</button>
               <div style={{ padding: "4px 16px 6px", fontSize: 9, color: colors.textDim, letterSpacing: "0.2em", textTransform: "uppercase" }}>
-                Song Library — {activeShow.songIds.length} in set
+                Song Library — {showSongIds.length} in set
               </div>
               <div style={{ flex: 1, overflow: "hidden" }}>
-                <SongLibrary setlistSongIds={activeShow.songIds} onAdd={addSong} onAddAll={addAllSongs} />
+                <SongLibrary setlistSongIds={showSongIds} onAdd={addSong} onAddAll={addAllSongs} />
               </div>
             </div>
           )}
@@ -398,7 +424,7 @@ export default function App() {
                 display: "flex", justifyContent: "space-between", alignItems: "center",
               }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  Set List — {activeShow.songIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}
+                  Set List — {showSongIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}
                   {activeShow.locked && <span style={{ color: colors.gold, fontSize: 10 }}>🔒</span>}
                 </span>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -418,8 +444,8 @@ export default function App() {
               )}
               <div style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
                 {isShowMode
-                  ? <ShowSetlist songIds={activeShow.songIds} playedSongIds={playedSongIds} voting={voting} songMap={songMap} onMarkPlayed={markPlayed} onUndoPlayed={undoPlayed} />
-                  : <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} showId={activeShow.id} baseUrl={BASE_URL} locked={!!activeShow.locked} />
+                  ? <ShowSetlist songIds={showSongIds} playedSongIds={playedSongIds} voting={voting} songMap={songMap} onMarkPlayed={markPlayed} onUndoPlayed={undoPlayed} />
+                  : <SetlistBuilder items={showItems} onChange={setItems} showId={activeShow.id} baseUrl={BASE_URL} locked={!!activeShow.locked} />
                 }
               </div>
               {!isShowMode && (
@@ -428,26 +454,26 @@ export default function App() {
                   borderTop: `1px solid ${colors.borderLight}`, background: colors.bgPanel, flexShrink: 0,
                 }}>
                   <a
-                    href={activeShow.songIds.length > 0 ? `${BASE_URL}?charts=${activeShow.id}` : undefined}
+                    href={showSongIds.length > 0 ? `${BASE_URL}?charts=${activeShow.id}` : undefined}
                     target="_blank" rel="noopener noreferrer"
-                    onClick={e => activeShow.songIds.length === 0 && e.preventDefault()}
+                    onClick={e => showSongIds.length === 0 && e.preventDefault()}
                     style={{
                       flex: 1, padding: "9px 4px", fontSize: 13, fontFamily: "inherit", textAlign: "center",
                       background: "transparent", border: `1px solid ${colors.coral}`, color: colors.coral,
-                      borderRadius: 4, cursor: activeShow.songIds.length === 0 ? "default" : "pointer",
-                      opacity: activeShow.songIds.length === 0 ? 0.4 : 1,
+                      borderRadius: 4, cursor: showSongIds.length === 0 ? "default" : "pointer",
+                      opacity: showSongIds.length === 0 ? 0.4 : 1,
                       textDecoration: "none", display: "block", lineHeight: 1.3,
                     }}
                   >Band<br/>Charts</a>
                   <a
-                    href={activeShow.songIds.length > 0 ? `${BASE_URL}?prompter=${activeShow.id}` : undefined}
+                    href={showSongIds.length > 0 ? `${BASE_URL}?prompter=${activeShow.id}` : undefined}
                     target="_blank" rel="noopener noreferrer"
-                    onClick={e => activeShow.songIds.length === 0 && e.preventDefault()}
+                    onClick={e => showSongIds.length === 0 && e.preventDefault()}
                     style={{
                       flex: 1, padding: "9px 4px", fontSize: 13, fontFamily: "inherit", textAlign: "center",
                       background: "transparent", border: `1px solid ${colors.teal}`, color: colors.teal,
-                      borderRadius: 4, cursor: activeShow.songIds.length === 0 ? "default" : "pointer",
-                      opacity: activeShow.songIds.length === 0 ? 0.4 : 1,
+                      borderRadius: 4, cursor: showSongIds.length === 0 ? "default" : "pointer",
+                      opacity: showSongIds.length === 0 ? 0.4 : 1,
                       textDecoration: "none", display: "block", lineHeight: 1.3,
                     }}
                   >Prompter<br/>View</a>
@@ -477,7 +503,7 @@ export default function App() {
         }}>
           {[
             { id: "library", label: "Library" },
-            { id: "setlist", label: `Set List${activeShow.songIds.length > 0 ? ` (${activeShow.songIds.length})` : ""}` },
+            { id: "setlist", label: `Set List${showSongIds.length > 0 ? ` (${showSongIds.length})` : ""}` },
           ].map(tab => (
             <button key={tab.id} onClick={() => setMobileTab(tab.id)} style={{
               flex: 1, padding: "12px 4px", border: "none",
@@ -492,7 +518,7 @@ export default function App() {
         <ShareModal show={shareShow} onClose={() => setShareShow(null)} onToast={showToast} />
         {showGenerate && (
           <GenerateModal
-            currentSongIds={activeShow.songIds}
+            currentSongIds={showSongIds}
             onGenerate={(ids) => { setSongIds(ids); setMobileTab("setlist"); }}
             onDuplicate={duplicateShowWithSongs}
             onClose={() => setShowGenerate(false)}
@@ -650,10 +676,10 @@ export default function App() {
               letterSpacing: "0.2em", textTransform: "uppercase", flexShrink: 0,
               borderBottom: `1px solid ${colors.borderLight}`,
             }}>
-              Song Library — {activeShow.songIds.length} in set
+              Song Library — {showSongIds.length} in set
             </div>
             <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-              <SongLibrary setlistSongIds={activeShow.songIds} onAdd={addSong} onAddAll={addAllSongs} />
+              <SongLibrary setlistSongIds={showSongIds} onAdd={addSong} onAddAll={addAllSongs} />
             </div>
           </div>
         )}
@@ -667,12 +693,47 @@ export default function App() {
             display: "flex", alignItems: "center", justifyContent: "space-between",
           }}>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              Set List — {activeShow.songIds.length} songs
+              Set List — {showSongIds.length} songs
               {totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}
               {!isShowMode && !activeShow.locked && " · drag to reorder"}
               {activeShow.locked && <span style={{ color: colors.gold }}>🔒 locked</span>}
             </span>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}>
+              {!isShowMode && !activeShow.locked && bits.length > 0 && (
+                <div style={{ position: "relative" }}>
+                  <button onClick={() => setBitPickerOpen(o => !o)} style={{
+                    background: "none", border: `1px solid ${colors.borderTeal}`,
+                    color: colors.teal, borderRadius: 3, padding: "2px 8px", fontSize: 10,
+                    cursor: "pointer", fontFamily: "inherit",
+                  }}>+ Cameron Bit</button>
+                  {bitPickerOpen && (
+                    <div style={{
+                      position: "absolute", top: "100%", right: 0, marginTop: 4,
+                      background: colors.bgCard, border: `1px solid ${colors.borderMed}`,
+                      borderRadius: 6, zIndex: 200, minWidth: 220, maxHeight: 300, overflowY: "auto",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+                    }}>
+                      <div style={{ padding: "8px 12px 4px", fontSize: 9, color: colors.textMuted, letterSpacing: "0.15em", textTransform: "uppercase" }}>
+                        Add Cameron Bit to setlist
+                      </div>
+                      {bits.map(bit => (
+                        <div key={bit.id} onClick={() => addCameronBit(bit.id)} style={{
+                          padding: "8px 12px", cursor: "pointer", fontSize: 12,
+                          color: colors.textPrimary, borderTop: `1px solid ${colors.borderLight}`,
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = colors.bgHoverRow}
+                        onMouseLeave={e => e.currentTarget.style.background = ""}
+                        >
+                          <div style={{ fontWeight: "bold", fontSize: 12 }}>{bit.title}</div>
+                          <div style={{ fontSize: 10, color: colors.textMuted, marginTop: 1 }}>
+                            {bit.type}{bit.speaker && bit.speaker !== "—" ? ` · ${bit.speaker}` : ""}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               <button onClick={toggleLocked} style={{
                 background: "none", border: `1px solid ${activeShow.locked ? colors.gold : colors.borderMed}`,
                 color: activeShow.locked ? colors.gold : colors.textDim,
@@ -692,8 +753,8 @@ export default function App() {
 
           <div style={{ flex: 1, overflowY: "auto" }}>
             {isShowMode
-              ? <ShowSetlist songIds={activeShow.songIds} playedSongIds={playedSongIds} voting={voting} songMap={songMap} onMarkPlayed={markPlayed} onUndoPlayed={undoPlayed} />
-              : <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} showId={activeShow.id} baseUrl={BASE_URL} locked={!!activeShow.locked} />
+              ? <ShowSetlist songIds={showSongIds} playedSongIds={playedSongIds} voting={voting} songMap={songMap} onMarkPlayed={markPlayed} onUndoPlayed={undoPlayed} />
+              : <SetlistBuilder items={showItems} onChange={setItems} showId={activeShow.id} baseUrl={BASE_URL} locked={!!activeShow.locked} />
             }
           </div>
         </div>
@@ -701,7 +762,7 @@ export default function App() {
 
       <ShareModal show={shareShow} onClose={() => setShareShow(null)} onToast={showToast} />
       {showGenerate && (
-        <GenerateModal currentSongIds={activeShow.songIds} onGenerate={setSongIds} onDuplicate={duplicateShowWithSongs} onClose={() => setShowGenerate(false)} />
+        <GenerateModal currentSongIds={showSongIds} onGenerate={setSongIds} onDuplicate={duplicateShowWithSongs} onClose={() => setShowGenerate(false)} />
       )}
       {showAdmin && <SongAdmin onClose={() => { setShowAdmin(false); if (returnTo) window.location.href = returnTo; }} onToast={showToast} initialSongId={editSongId} />}
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
