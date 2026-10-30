@@ -330,8 +330,9 @@ export default function App() {
           borderBottom: `1px solid ${colors.borderMed}`,
           background: colors.bgHeader, overflow: "hidden",
         }}>
-          <div style={{ fontSize: 12, color: colors.coral, fontWeight: "bold", letterSpacing: "0.1em", padding: "0 10px", flexShrink: 0 }}>
-            SDWF
+          <div style={{ padding: "0 10px", flexShrink: 0, lineHeight: 1.2 }}>
+            <div style={{ fontSize: 12, color: colors.coral, fontWeight: "bold", letterSpacing: "0.1em" }}>SDWF — Bueller</div>
+            <div style={{ fontSize: 8, color: colors.textDim, letterSpacing: "0.08em" }}>Bueller… Bueller… Bueller…</div>
           </div>
           {/* Scrollable show tabs */}
           <div style={{
@@ -590,8 +591,9 @@ export default function App() {
         borderBottom: `1px solid ${colors.borderMed}`, flexShrink: 0,
         background: colors.bgHeader,
       }}>
-        <div style={{ fontSize: 12, color: colors.coral, fontWeight: "bold", letterSpacing: "0.1em", marginRight: 4 }}>
-          SDWF
+        <div style={{ marginRight: 4, lineHeight: 1.2 }}>
+          <div style={{ fontSize: 12, color: colors.coral, fontWeight: "bold", letterSpacing: "0.1em" }}>SDWF — Bueller</div>
+          <div style={{ fontSize: 8, color: colors.textDim, letterSpacing: "0.08em" }}>Bueller… Bueller… Bueller…</div>
         </div>
         <div style={{ display: "flex", gap: 2, flex: 1, overflow: "auto", minWidth: 0 }}>
           {shows.map(show => (
