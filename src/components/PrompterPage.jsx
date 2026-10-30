@@ -59,6 +59,17 @@ function SectionContent({ lines }) {
   });
 }
 
+function useIsWide() {
+  const [isWide, setIsWide] = useState(() => window.innerWidth >= 768);
+  useEffect(() => {
+    const update = () => setIsWide(window.innerWidth >= 768);
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    return () => { window.removeEventListener("resize", update); window.removeEventListener("orientationchange", update); };
+  }, []);
+  return isWide;
+}
+
 export default function PrompterPage({ showId }) {
   const [show, setShow]           = useState(null);
   const [songs, setSongs]         = useState({});
@@ -66,8 +77,14 @@ export default function PrompterPage({ showId }) {
   const [secIdx, setSecIdx]       = useState(0);
   const [loading, setLoading]     = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isWide = useIsWide();
   const touchStartX = useRef(null);
   const contentRef  = useRef(null);
+
+  // Auto-open sidebar on wide screens, close overlay on narrow
+  useEffect(() => {
+    setSidebarOpen(isWide);
+  }, [isWide]);
 
   useEffect(() => {
     const root = document.getElementById("root");
@@ -194,146 +211,160 @@ export default function PrompterPage({ showId }) {
         )}
       </div>
 
-      {/* ── Song list sidebar (collapsible overlay) ── */}
-      {sidebarOpen && (
-        <div style={{
-          position:"absolute", top:0, left:0, bottom:0, zIndex:50,
-          display:"flex", flexDirection:"column",
-          width: "min(280px, 80vw)",
-          background:"#080814", borderRight:"1px solid #1e1e3a",
-          boxShadow:"4px 0 24px rgba(0,0,0,0.6)",
-        }}>
-          {/* Sidebar header */}
+      {/* ── Body: sidebar + main content ── */}
+      <div style={{ flex:1, display:"flex", overflow:"hidden", position:"relative" }}>
+
+        {/* Sidebar — persistent column on wide, overlay on narrow */}
+        {sidebarOpen && (
           <div style={{
-            display:"flex", alignItems:"center", justifyContent:"space-between",
-            padding:"12px 14px", borderBottom:"1px solid #1e1e3a",
-            background:"#0a0a18", flexShrink:0,
+            display:"flex", flexDirection:"column",
+            width: isWide ? 220 : "min(280px, 80vw)",
+            flexShrink: 0,
+            background:"#080814",
+            borderRight:"1px solid #1e1e3a",
+            ...(isWide ? {} : {
+              position:"absolute", top:0, left:0, bottom:0, zIndex:50,
+              boxShadow:"4px 0 24px rgba(0,0,0,0.6)",
+            }),
           }}>
-            <span style={{ fontSize:11, color:"#4ecdc4", fontWeight:"bold", letterSpacing:"0.12em" }}>
-              SET LIST
-            </span>
-            <button onClick={() => setSidebarOpen(false)} style={{
-              background:"none", border:"none", color:"#555570",
-              fontSize:18, cursor:"pointer", lineHeight:1, padding:"0 2px",
-            }}>✕</button>
+            {/* Sidebar header — only show ✕ on narrow (overlay mode) */}
+            <div style={{
+              display:"flex", alignItems:"center", justifyContent:"space-between",
+              padding:"10px 14px", borderBottom:"1px solid #1e1e3a",
+              background:"#0a0a18", flexShrink:0,
+            }}>
+              <span style={{ fontSize:11, color:"#4ecdc4", fontWeight:"bold", letterSpacing:"0.12em" }}>SET LIST</span>
+              {!isWide && (
+                <button onClick={() => setSidebarOpen(false)} style={{
+                  background:"none", border:"none", color:"#555570",
+                  fontSize:18, cursor:"pointer", lineHeight:1, padding:"0 2px",
+                }}>✕</button>
+              )}
+            </div>
+            {/* Song rows */}
+            <div style={{ overflowY:"auto", flex:1, padding:"6px 0" }}>
+              {songList.map((s, i) => (
+                <div
+                  key={i}
+                  onClick={() => { setSongIdx(i); setSecIdx(0); if (!isWide) setSidebarOpen(false); }}
+                  style={{
+                    display:"flex", alignItems:"center", gap:8,
+                    padding: isWide ? "8px 12px" : "10px 14px",
+                    cursor:"pointer",
+                    background: i === songIdx ? "#0f2020" : "transparent",
+                    borderLeft: i === songIdx ? "3px solid #4ecdc4" : "3px solid transparent",
+                  }}
+                >
+                  <span style={{ fontSize:11, color: i === songIdx ? "#4ecdc4" : "#444468", fontVariantNumeric:"tabular-nums", minWidth:18, textAlign:"right", flexShrink:0 }}>
+                    {i + 1}
+                  </span>
+                  <span style={{ fontSize: isWide ? 13 : 15, color: i === songIdx ? "#f0f0f0" : "#8080a0", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                    {s.title}
+                  </span>
+                  {s.key && (
+                    <span style={{ fontSize:10, color:"#2a6e6b", flexShrink:0 }}>{s.key}</span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-          {/* Song list */}
-          <div style={{ overflowY:"auto", flex:1, padding:"8px 0" }}>
-            {songList.map((s, i) => (
-              <div
-                key={i}
-                onClick={() => { setSongIdx(i); setSecIdx(0); setSidebarOpen(false); }}
-                style={{
-                  display:"flex", alignItems:"baseline", gap:10,
-                  padding:"10px 14px", cursor:"pointer",
-                  background: i === songIdx ? "#0f2020" : "transparent",
-                  borderLeft: i === songIdx ? "3px solid #4ecdc4" : "3px solid transparent",
-                }}
-              >
-                <span style={{ fontSize:12, color: i === songIdx ? "#4ecdc4" : "#555570", fontVariantNumeric:"tabular-nums", minWidth:20, textAlign:"right", flexShrink:0 }}>
-                  {i + 1}
-                </span>
-                <span style={{ fontSize:15, color: i === songIdx ? "#f0f0f0" : "#9090b0", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                  {s.title}
-                </span>
-                {s.key && (
-                  <span style={{ fontSize:11, color:"#2a6e6b", flexShrink:0 }}>{s.key}</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {/* Tap-away backdrop */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          style={{ position:"absolute", inset:0, zIndex:49, background:"rgba(0,0,0,0.4)" }}
-        />
-      )}
-
-      {/* ── Note bar ── */}
-      {song.note && (
-        <div style={{ padding:"6px 18px", background:"#140f00", borderBottom:"1px solid #3a2800", fontSize:13, color:"#f4c542", flexShrink:0, lineHeight:1.4 }}>
-          {song.note}
-        </div>
-      )}
-
-      {/* ── Section label ── */}
-      {curSection?.label && (
-        <div style={{ padding:"7px 18px", background:"#091a1a", borderBottom:"1px solid #0e3030", flexShrink:0, display:"flex", alignItems:"baseline", gap:10 }}>
-          <span style={{ background:"#0f2e2e", color:"#4ecdc4", borderLeft:"4px solid #4ecdc4", padding:"3px 16px", fontSize:15, letterSpacing:"0.12em", fontWeight:"bold" }}>
-            {curSection.label}
-          </span>
-          {curSection.subtitle && (
-            <span style={{ color:"#556668", fontSize:13 }}>{curSection.subtitle}</span>
-          )}
-        </div>
-      )}
-
-      {/* ── Chart content ── */}
-      <div
-        ref={contentRef}
-        style={{ flex:1, overflowY:"auto", padding:"18px 22px 10px", WebkitOverflowScrolling:"touch" }}
-        onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
-        onTouchEnd={e => {
-          if (touchStartX.current == null) return;
-          const dx = e.changedTouches[0].clientX - touchStartX.current;
-          touchStartX.current = null;
-          if (Math.abs(dx) > 60) { dx < 0 ? goNext() : goPrev(); }
-        }}
-      >
-        {curSection ? (
-          <SectionContent lines={curSection.lines} />
-        ) : (
-          <div style={{ color:"#444460", fontStyle:"italic", fontSize:18, marginTop:24 }}>No chart for this song.</div>
         )}
-      </div>
 
-      {/* ── Up next strip ── */}
-      <div style={{ padding:"5px 18px", background:"#080810", borderTop:"1px solid #111126", flexShrink:0, minHeight:28, display:"flex", alignItems:"center", gap:6 }}>
-        {upNext ? (
-          <span style={{ fontSize:12, color:"#2a2a50" }}>
-            {upNext.isSong ? "↓ Next song: " : "↓ "}<span style={{ color:"#2a3a4a" }}>{upNext.label}</span>
-            {upNext.key && <span style={{ color:"#1a4a3a", marginLeft:8 }}>Key {upNext.key}</span>}
-          </span>
-        ) : songList.length > 0 ? (
-          <span style={{ fontSize:11, color:"#1a4a3a", letterSpacing:"0.15em" }}>— END OF SET —</span>
-        ) : null}
-      </div>
+        {/* Tap-away backdrop — only in overlay/narrow mode */}
+        {sidebarOpen && !isWide && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            style={{ position:"absolute", inset:0, zIndex:49, background:"rgba(0,0,0,0.4)" }}
+          />
+        )}
 
-      {/* ── Bottom nav ── */}
-      <div style={{
-        display:"flex", alignItems:"center", padding:"10px 14px", gap:10,
-        background:"#080810", borderTop:"1px solid #1a1a30", flexShrink:0,
-      }}>
-        <button onClick={goPrev} disabled={isFirst} style={{
-          padding:"14px 22px", fontSize:17, background:"#111124",
-          border:"1px solid #2a2a4a", color: isFirst ? "#252540" : "#c0c0d8",
-          borderRadius:6, cursor: isFirst ? "default" : "pointer", fontFamily:"inherit", flexShrink:0,
-        }}>← Prev</button>
+        {/* ── Main content column ── */}
+        <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0 }}>
 
-        {/* Section progress dots */}
-        <div style={{ flex:1, display:"flex", gap:5, justifyContent:"center", alignItems:"center", flexWrap:"wrap" }}>
-          {sections.length > 1 ? sections.map((s, i) => (
-            <div key={i} onClick={() => setSecIdx(i)} title={s.label || `Section ${i + 1}`} style={{
-              height:7, width: i === secIdx ? 22 : 7,
-              borderRadius:99, background: i === secIdx ? "#4ecdc4" : "#252545",
-              cursor:"pointer", transition:"all 0.18s", flexShrink:0,
-            }} />
-          )) : (
-            <span style={{ fontSize:11, color:"#333358", letterSpacing:"0.1em" }}>
-              {sections.length === 1 && curSection?.label ? curSection.label : ""}
-            </span>
+          {/* Note bar */}
+          {song.note && (
+            <div style={{ padding:"6px 18px", background:"#140f00", borderBottom:"1px solid #3a2800", fontSize:13, color:"#f4c542", flexShrink:0, lineHeight:1.4 }}>
+              {song.note}
+            </div>
           )}
-        </div>
 
-        <button onClick={goNext} disabled={isLast} style={{
-          padding:"14px 22px", fontSize:17, background:"#111124",
-          border:"1px solid #2a2a4a", color: isLast ? "#252540" : "#c0c0d8",
-          borderRadius:6, cursor: isLast ? "default" : "pointer", fontFamily:"inherit", flexShrink:0,
-        }}>Next →</button>
-      </div>
+          {/* Section label */}
+          {curSection?.label && (
+            <div style={{ padding:"7px 18px", background:"#091a1a", borderBottom:"1px solid #0e3030", flexShrink:0, display:"flex", alignItems:"baseline", gap:10 }}>
+              <span style={{ background:"#0f2e2e", color:"#4ecdc4", borderLeft:"4px solid #4ecdc4", padding:"3px 16px", fontSize:15, letterSpacing:"0.12em", fontWeight:"bold" }}>
+                {curSection.label}
+              </span>
+              {curSection.subtitle && (
+                <span style={{ color:"#556668", fontSize:13 }}>{curSection.subtitle}</span>
+              )}
+            </div>
+          )}
+
+          {/* Chart content */}
+          <div
+            ref={contentRef}
+            style={{ flex:1, overflowY:"auto", padding:"18px 22px 10px", WebkitOverflowScrolling:"touch" }}
+            onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
+            onTouchEnd={e => {
+              if (touchStartX.current == null) return;
+              const dx = e.changedTouches[0].clientX - touchStartX.current;
+              touchStartX.current = null;
+              if (Math.abs(dx) > 60) { dx < 0 ? goNext() : goPrev(); }
+            }}
+          >
+            {curSection ? (
+              <SectionContent lines={curSection.lines} />
+            ) : (
+              <div style={{ color:"#444460", fontStyle:"italic", fontSize:18, marginTop:24 }}>No chart for this song.</div>
+            )}
+          </div>
+
+          {/* Up next strip */}
+          <div style={{ padding:"5px 18px", background:"#080810", borderTop:"1px solid #111126", flexShrink:0, minHeight:28, display:"flex", alignItems:"center", gap:6 }}>
+            {upNext ? (
+              <span style={{ fontSize:12, color:"#2a2a50" }}>
+                {upNext.isSong ? "↓ Next song: " : "↓ "}<span style={{ color:"#2a3a4a" }}>{upNext.label}</span>
+                {upNext.key && <span style={{ color:"#1a4a3a", marginLeft:8 }}>Key {upNext.key}</span>}
+              </span>
+            ) : songList.length > 0 ? (
+              <span style={{ fontSize:11, color:"#1a4a3a", letterSpacing:"0.15em" }}>— END OF SET —</span>
+            ) : null}
+          </div>
+
+          {/* Bottom nav */}
+          <div style={{
+            display:"flex", alignItems:"center", padding:"10px 14px", gap:10,
+            background:"#080810", borderTop:"1px solid #1a1a30", flexShrink:0,
+          }}>
+            <button onClick={goPrev} disabled={isFirst} style={{
+              padding:"14px 22px", fontSize:17, background:"#111124",
+              border:"1px solid #2a2a4a", color: isFirst ? "#252540" : "#c0c0d8",
+              borderRadius:6, cursor: isFirst ? "default" : "pointer", fontFamily:"inherit", flexShrink:0,
+            }}>← Prev</button>
+
+            <div style={{ flex:1, display:"flex", gap:5, justifyContent:"center", alignItems:"center", flexWrap:"wrap" }}>
+              {sections.length > 1 ? sections.map((s, i) => (
+                <div key={i} onClick={() => setSecIdx(i)} title={s.label || `Section ${i + 1}`} style={{
+                  height:7, width: i === secIdx ? 22 : 7,
+                  borderRadius:99, background: i === secIdx ? "#4ecdc4" : "#252545",
+                  cursor:"pointer", transition:"all 0.18s", flexShrink:0,
+                }} />
+              )) : (
+                <span style={{ fontSize:11, color:"#333358", letterSpacing:"0.1em" }}>
+                  {sections.length === 1 && curSection?.label ? curSection.label : ""}
+                </span>
+              )}
+            </div>
+
+            <button onClick={goNext} disabled={isLast} style={{
+              padding:"14px 22px", fontSize:17, background:"#111124",
+              border:"1px solid #2a2a4a", color: isLast ? "#252540" : "#c0c0d8",
+              borderRadius:6, cursor: isLast ? "default" : "pointer", fontFamily:"inherit", flexShrink:0,
+            }}>Next →</button>
+          </div>
+
+        </div>{/* end main column */}
+      </div>{/* end body row */}
     </div>
   );
 }
