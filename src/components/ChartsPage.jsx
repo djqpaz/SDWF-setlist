@@ -135,7 +135,7 @@ export default function ChartsPage({ showId, songId }) {
       }
       setLoading(false);
     });
-    return () => { unsub(); document.title = "Sick Day with Ferris — Set List Builder"; };
+    return () => { unsub(); document.title = "Bueller | Sick Day with Ferris"; };
   }, [showId]);
 
   useEffect(() => {

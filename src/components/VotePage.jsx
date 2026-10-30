@@ -45,7 +45,7 @@ export default function VotePage({ showId }) {
       }
       setLoading(false);
     });
-    return () => { unsub(); document.title = "Sick Day with Ferris — Set List Builder"; };
+    return () => { unsub(); document.title = "Bueller | Sick Day with Ferris"; };
   }, [showId]);
 
   // Listen to songs
