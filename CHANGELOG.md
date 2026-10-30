@@ -3,6 +3,36 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
+## 2026-10-30 — Cameron Bits
+
+### Cameron Bits — show script management
+The setlist can now hold more than songs. Cameron Bits are script elements
+(narrations, emcee intros, lighting cues, wardrobe changes, transitions) that
+live inline in the set order alongside songs.
+
+**Song Manager → Cameron Bits tab**
+- Add, edit, and delete Cameron Bits in a new tab inside the Song Manager (⚙)
+- Each bit has: **Title**, **Type** (Narration / Emcee / LX cue / Wardrobe /
+  Transition), **Speaker** (Brett, Spencer, Kenny, John, Chris, Matt, Dave, All),
+  optional **Duration**, and a **Script / notes** field for the full text or cues
+- Filter chip bar lets you view all bits or filter by type
+
+**Setlist Builder — bits inline with songs**
+- A **+ Cameron Bit** button in the setlist header (only visible when you have
+  bits and the set is unlocked) opens a picker to add any bit to the end of the
+  set
+- Bits appear as teal accent rows in the setlist, labelled with type and speaker
+- Bits are draggable — drop them anywhere in the set order between songs
+- Setlist now uses a `items` array in Firestore (song + cameron entries) while
+  keeping a `songIds` field for backward compatibility with Prompter / Charts
+
+**Web Prompter — Cameron Bit full-screen view**
+- Cameron Bits appear as their own entries in the Prompter's navigation (sidebar
+  shows them in italic teal, numbered separately from songs)
+- Tapping into a bit shows its type badge, speaker, and full script text in a
+  large, readable font — swipe or ← / → to navigate like any song section
+- The "up next" strip tells you when a bit is coming after the current song
+
 ## 2026-10-30 — Band Charts & Prompter improvements, app renamed to Bueller
 
 ### App renamed
