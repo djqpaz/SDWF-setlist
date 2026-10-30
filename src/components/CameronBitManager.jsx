@@ -15,7 +15,7 @@ const TYPE_COLORS = {
   "Transition": "#8888aa",
 };
 
-const EMPTY_BIT = { title: "", type: "Narration", speakers: [], duration: "", content: "" };
+const makeEmptyBit = (showId) => ({ title: "", type: "Narration", speakers: [], duration: "", content: "", showId: showId || "" });
 
 function Field({ label, value, onChange, type = "text", options, rows }) {
   const inputStyle = {
@@ -75,7 +75,7 @@ function SpeakerPicker({ value, onChange }) {
   );
 }
 
-function BitForm({ initial, onSave, onCancel, saving }) {
+function BitForm({ initial, onSave, onCancel, saving, shows = [] }) {
   // speakers stored as array internally; saved as comma-joined string
   const initSpeakers = initial.speakers && Array.isArray(initial.speakers)
     ? initial.speakers
@@ -89,6 +89,8 @@ function BitForm({ initial, onSave, onCancel, saving }) {
     onSave({ ...form, speaker, duration: Number(form.duration) || 0 });
   }
 
+  const showOptions = shows.map(s => ({ value: s.id, label: s.name }));
+
   return (
     <div style={{
       background: colors.bgPanel, border: `1px solid ${colors.borderMed}`,
@@ -100,6 +102,19 @@ function BitForm({ initial, onSave, onCancel, saving }) {
         </div>
         <Field label="Type" value={form.type} onChange={set("type")} options={BIT_TYPES} />
         <Field label="Duration (min)" value={form.duration} onChange={set("duration")} type="number" />
+        {showOptions.length > 0 && (
+          <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 3 }}>
+            <label style={{ fontSize: 10, color: colors.textMuted, letterSpacing: "0.1em", textTransform: "uppercase" }}>Show</label>
+            <select
+              value={form.showId || ""}
+              onChange={e => setForm(f => ({ ...f, showId: e.target.value }))}
+              style={{ width: "100%", background: colors.bgInput, border: `1px solid ${colors.borderMed}`, color: colors.textPrimary, padding: "6px 8px", borderRadius: 3, fontSize: 12, fontFamily: "'Georgia', serif", outline: "none", cursor: "pointer" }}
+            >
+              <option value="">— any show —</option>
+              {showOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+        )}
         <div style={{ gridColumn: "1 / -1" }}>
           <SpeakerPicker value={form.speakers} onChange={val => setForm(f => ({ ...f, speakers: val }))} />
         </div>
@@ -120,7 +135,7 @@ function BitForm({ initial, onSave, onCancel, saving }) {
   );
 }
 
-export default function CameronBitManager({ onToast }) {
+export default function CameronBitManager({ onToast, activeShowId, shows = [] }) {
   const { bits } = useCameronBits();
   const [expandedId, setExpandedId] = useState(null);
   const [adding, setAdding] = useState(false);
@@ -128,7 +143,9 @@ export default function CameronBitManager({ onToast }) {
   const [filterType, setFilterType] = useState("All");
   const [confirmDelete, setConfirmDelete] = useState(null);
 
-  const filtered = bits.filter(b => filterType === "All" || b.type === filterType);
+  // Show only bits for the active show (plus legacy bits with no showId)
+  const showBits = bits.filter(b => !b.showId || b.showId === activeShowId);
+  const filtered = showBits.filter(b => filterType === "All" || b.type === filterType);
 
   async function handleAdd(data) {
     setSaving(true);
@@ -182,10 +199,11 @@ export default function CameronBitManager({ onToast }) {
       {adding && (
         <div style={{ marginBottom: 14 }}>
           <BitForm
-            initial={EMPTY_BIT}
+            initial={makeEmptyBit(activeShowId)}
             onSave={handleAdd}
             onCancel={() => setAdding(false)}
             saving={saving}
+            shows={shows}
           />
         </div>
       )}
@@ -193,7 +211,7 @@ export default function CameronBitManager({ onToast }) {
       {/* Empty state */}
       {!adding && filtered.length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 20px", color: colors.textMuted, fontSize: 13, fontStyle: "italic" }}>
-          {filterType === "All" ? "No Cameron Bits yet — add one above." : `No ${filterType} bits yet.`}
+          {filterType === "All" ? "No Cameron Bits for this show yet — add one above." : `No ${filterType} bits for this show yet.`}
         </div>
       )}
 
@@ -209,6 +227,7 @@ export default function CameronBitManager({ onToast }) {
                 onSave={data => handleEdit(bit, data)}
                 onCancel={() => setExpandedId(null)}
                 saving={saving}
+                shows={shows}
               />
             ) : (
               <div style={{

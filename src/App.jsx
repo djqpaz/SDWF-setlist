@@ -433,6 +433,41 @@ export default function App() {
                     color: activeShow.locked ? colors.gold : colors.textDim,
                     borderRadius: 3, padding: "2px 7px", fontSize: 9, cursor: "pointer", fontFamily: "inherit",
                   }}>{activeShow.locked ? "Unlock" : "Lock"}</button>
+                  {!isShowMode && !activeShow.locked && (() => {
+                    const showBits = bits.filter(b => !b.showId || b.showId === activeShow.id);
+                    return showBits.length > 0 ? (
+                      <div style={{ position: "relative" }}>
+                        <button onClick={() => setBitPickerOpen(o => !o)} style={{
+                          background: "none", border: `1px solid ${colors.borderTeal}`,
+                          color: colors.teal, borderRadius: 3, padding: "2px 7px", fontSize: 9,
+                          cursor: "pointer", fontFamily: "inherit",
+                        }}>+ Bits</button>
+                        {bitPickerOpen && (
+                          <div style={{
+                            position: "absolute", top: "100%", right: 0, marginTop: 4,
+                            background: colors.bgCard, border: `1px solid ${colors.borderMed}`,
+                            borderRadius: 6, zIndex: 200, minWidth: 200, maxHeight: 260, overflowY: "auto",
+                            boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+                          }}>
+                            <div style={{ padding: "6px 10px 3px", fontSize: 9, color: colors.textMuted, letterSpacing: "0.15em", textTransform: "uppercase" }}>
+                              Add Cameron Bit
+                            </div>
+                            {showBits.map(bit => (
+                              <div key={bit.id} onClick={() => addCameronBit(bit.id)} style={{
+                                padding: "7px 10px", cursor: "pointer", fontSize: 12,
+                                color: colors.textPrimary, borderTop: `1px solid ${colors.borderLight}`,
+                              }}>
+                                <div style={{ fontWeight: "bold", fontSize: 11 }}>{bit.title}</div>
+                                <div style={{ fontSize: 10, color: colors.textMuted, marginTop: 1 }}>
+                                  {bit.type}{bit.speaker && bit.speaker !== "—" ? ` · ${bit.speaker}` : ""}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : null;
+                  })()}
                   <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer", fontSize: 9, color: colors.textMuted }}>
                     <input type="checkbox" checked={!!activeShow.votingEnabled} onChange={toggleVoting} style={{ cursor: "pointer" }} />
                     Crowd voting
@@ -524,7 +559,7 @@ export default function App() {
             onClose={() => setShowGenerate(false)}
           />
         )}
-        {showAdmin && <SongAdmin onClose={() => { setShowAdmin(false); if (returnTo) window.location.href = returnTo; }} onToast={showToast} initialSongId={editSongId} />}
+        {showAdmin && <SongAdmin onClose={() => { setShowAdmin(false); if (returnTo) window.location.href = returnTo; }} onToast={showToast} initialSongId={editSongId} activeShowId={activeShow?.id} shows={shows} />}
         {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
         {confirmDialog && (
           <ConfirmDialog
@@ -699,47 +734,50 @@ export default function App() {
               {activeShow.locked && <span style={{ color: colors.gold }}>🔒 locked</span>}
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: 10, position: "relative" }}>
-              {!isShowMode && !activeShow.locked && bits.length > 0 && (
-                <div style={{ position: "relative" }}>
-                  <button onClick={() => setBitPickerOpen(o => !o)} style={{
-                    background: "none", border: `1px solid ${colors.borderTeal}`,
-                    color: colors.teal, borderRadius: 3, padding: "2px 8px", fontSize: 10,
-                    cursor: "pointer", fontFamily: "inherit",
-                  }}>+ Cameron Bit</button>
-                  {bitPickerOpen && (
-                    <div style={{
-                      position: "absolute", top: "100%", right: 0, marginTop: 4,
-                      background: colors.bgCard, border: `1px solid ${colors.borderMed}`,
-                      borderRadius: 6, zIndex: 200, minWidth: 220, maxHeight: 300, overflowY: "auto",
-                      boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
-                    }}>
-                      <div style={{ padding: "8px 12px 4px", fontSize: 9, color: colors.textMuted, letterSpacing: "0.15em", textTransform: "uppercase" }}>
-                        Add Cameron Bit to setlist
-                      </div>
-                      {bits.map(bit => (
-                        <div key={bit.id} onClick={() => addCameronBit(bit.id)} style={{
-                          padding: "8px 12px", cursor: "pointer", fontSize: 12,
-                          color: colors.textPrimary, borderTop: `1px solid ${colors.borderLight}`,
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = colors.bgHoverRow}
-                        onMouseLeave={e => e.currentTarget.style.background = ""}
-                        >
-                          <div style={{ fontWeight: "bold", fontSize: 12 }}>{bit.title}</div>
-                          <div style={{ fontSize: 10, color: colors.textMuted, marginTop: 1 }}>
-                            {bit.type}{bit.speaker && bit.speaker !== "—" ? ` · ${bit.speaker}` : ""}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
               <button onClick={toggleLocked} style={{
                 background: "none", border: `1px solid ${activeShow.locked ? colors.gold : colors.borderMed}`,
                 color: activeShow.locked ? colors.gold : colors.textDim,
                 borderRadius: 3, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: "inherit",
                 textTransform: "none",
               }}>{activeShow.locked ? "Unlock" : "Lock"}</button>
+              {!isShowMode && !activeShow.locked && (() => {
+                const showBits = bits.filter(b => !b.showId || b.showId === activeShow.id);
+                return showBits.length > 0 ? (
+                  <div style={{ position: "relative" }}>
+                    <button onClick={() => setBitPickerOpen(o => !o)} style={{
+                      background: "none", border: `1px solid ${colors.borderTeal}`,
+                      color: colors.teal, borderRadius: 3, padding: "2px 8px", fontSize: 10,
+                      cursor: "pointer", fontFamily: "inherit",
+                    }}>+ Add Cameron Bits</button>
+                    {bitPickerOpen && (
+                      <div style={{
+                        position: "absolute", top: "100%", right: 0, marginTop: 4,
+                        background: colors.bgCard, border: `1px solid ${colors.borderMed}`,
+                        borderRadius: 6, zIndex: 200, minWidth: 220, maxHeight: 300, overflowY: "auto",
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+                      }}>
+                        <div style={{ padding: "8px 12px 4px", fontSize: 9, color: colors.textMuted, letterSpacing: "0.15em", textTransform: "uppercase" }}>
+                          Add Cameron Bit to setlist
+                        </div>
+                        {showBits.map(bit => (
+                          <div key={bit.id} onClick={() => addCameronBit(bit.id)} style={{
+                            padding: "8px 12px", cursor: "pointer", fontSize: 12,
+                            color: colors.textPrimary, borderTop: `1px solid ${colors.borderLight}`,
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = colors.bgHoverRow}
+                          onMouseLeave={e => e.currentTarget.style.background = ""}
+                          >
+                            <div style={{ fontWeight: "bold", fontSize: 12 }}>{bit.title}</div>
+                            <div style={{ fontSize: 10, color: colors.textMuted, marginTop: 1 }}>
+                              {bit.type}{bit.speaker && bit.speaker !== "—" ? ` · ${bit.speaker}` : ""}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : null;
+              })()}
               <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 10, color: colors.textMuted, textTransform: "none" }}>
                 <input type="checkbox" checked={!!activeShow.votingEnabled} onChange={toggleVoting} style={{ cursor: "pointer", accentColor: colors.teal }} />
                 Crowd voting
@@ -764,7 +802,7 @@ export default function App() {
       {showGenerate && (
         <GenerateModal currentSongIds={showSongIds} onGenerate={setSongIds} onDuplicate={duplicateShowWithSongs} onClose={() => setShowGenerate(false)} />
       )}
-      {showAdmin && <SongAdmin onClose={() => { setShowAdmin(false); if (returnTo) window.location.href = returnTo; }} onToast={showToast} initialSongId={editSongId} />}
+      {showAdmin && <SongAdmin onClose={() => { setShowAdmin(false); if (returnTo) window.location.href = returnTo; }} onToast={showToast} initialSongId={editSongId} activeShowId={activeShow?.id} shows={shows} />}
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
       {confirmDialog && (
         <ConfirmDialog

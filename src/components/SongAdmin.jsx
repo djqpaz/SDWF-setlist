@@ -111,7 +111,7 @@ function SongForm({ initial, onSave, onCancel, saving }) {
   );
 }
 
-export default function SongAdmin({ onClose, onToast, initialSongId }) {
+export default function SongAdmin({ onClose, onToast, initialSongId, activeShowId, shows }) {
   const { songs } = useSongs();
   const [activeTab, setActiveTab] = useState("songs");
   const [search, setSearch] = useState("");
@@ -245,7 +245,7 @@ export default function SongAdmin({ onClose, onToast, initialSongId }) {
 
         {/* Cameron Bits tab */}
         {activeTab === "cameron" && (
-          <CameronBitManager onToast={onToast} />
+          <CameronBitManager onToast={onToast} activeShowId={activeShowId} shows={shows} />
         )}
 
         {/* Songs Body */}

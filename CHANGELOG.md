@@ -3,6 +3,22 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
+## 2026-10-30 — Cameron Bits show association & button
+
+### Cameron Bits — show tagging
+- Each Cameron Bit now belongs to a specific show — the **Show** dropdown in the
+  bit form defaults to the active show but can be changed to any show
+- The Cameron Bits Manager only shows bits for the active show (switch shows to
+  see that show's bits)
+- The **+ Add Cameron Bits** picker in the setlist only offers bits tagged to the
+  active show
+
+### Add Cameron Bits button — next to Lock
+- The **+ Add Cameron Bits** button (desktop) and **+ Bits** button (mobile) now
+  sit right next to the **Lock / Unlock** button in the setlist header — only
+  visible when the set is unlocked and the show has bits
+- Previously the button appeared on the far left of the header controls
+
 ## 2026-10-30 — Multi-speaker Cameron Bits
 
 ### Cameron Bit speaker field — multi-select
