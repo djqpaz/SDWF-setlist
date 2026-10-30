@@ -3,6 +3,33 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
+## 2026-10-30 — Christmas Show script entered
+
+### 17 Cameron Bits added for The Christmas Show (2026)
+All non-song moments from the Christmas show script are now in the app as
+Cameron Bits, tagged to the Christmas Show, ready to drag into the setlist:
+
+- **Opening Intro** (Emcee · Brett)
+- **The Season Begins** (Narration · Spencer, Brett)
+- **Summer of '69 Bit** (Emcee · Kenny, Spencer)
+- **Kids These Days / UFO Exchange** (Emcee · Brett, Dave)
+- **Set the Mood — Christmas Song Story** (Narration · Spencer)
+- **Chestnuts Quip** (Emcee · Brett)
+- **Matt Intro — Shake Up Christmas** (Emcee · John)
+- **Feliz Navidad Transition** (Transition · TBD)
+- **Intermission Announcement** (Emcee · Brett)
+- **Act Two Re-Entrance** (Emcee · Brett)
+- **Dads Narration** (Narration · Chris, John)
+- **Band Introductions + The Long Way Home** (Emcee · Brett, Spencer)
+- **Turning Toward the Manger** (Narration · Spencer, Brett)
+- **A Drummer's Gift** (Narration · Matt)
+- **The Reason for It All** (Narration · Brett, Spencer)
+- **Silent Night Intro** (Emcee · Brett)
+- **Send-Off** (Narration · Spencer, Kenny, Brett)
+
+Each bit includes the full script text, LX cues, staging notes, and wardrobe
+cues from the show script. Edit any bit in Song Manager → Cameron Bits.
+
 ## 2026-10-30 — Cameron Bits show association & button
 
 ### Cameron Bits — show tagging
