@@ -70,9 +70,15 @@ function SongCard({ song, index, showChords, editUrl }) {
             <span style={{ fontSize: 12, fontWeight: 600, padding: "2px 9px", borderRadius: 99, background: "#22223a", border: "1px solid #2a2a4a", color: "#b8b8cc" }}>{song.bpm} BPM</span>
             {song.capo > 0 && <span style={{ fontSize: 12, fontWeight: 600, padding: "2px 9px", borderRadius: 99, background: "#22223a", border: "1px solid #2a2a4a", color: "#b8b8cc" }}>Capo {song.capo}</span>}
             {editUrl && (
-              <a href={editUrl} className="no-print" style={{ fontSize: 11, color: "#8888aa", border: "1px solid #2a2a4a", borderRadius: 4, padding: "2px 8px", textDecoration: "none", marginLeft: "auto" }}>
-                ✎ Edit chart
-              </a>
+              <button
+                className="no-print"
+                onClick={() => {
+                  if (window.confirm("Chart editor — band use only.\n\nAre you Kenny or Dave?\n\nIf not, please hit Cancel.")) {
+                    window.location.href = editUrl;
+                  }
+                }}
+                style={{ fontSize: 11, color: "#8888aa", border: "1px solid #2a2a4a", borderRadius: 4, padding: "2px 8px", background: "none", cursor: "pointer", marginLeft: "auto", fontFamily: "inherit" }}
+              >✎ Edit chart</button>
             )}
           </div>
         </div>
