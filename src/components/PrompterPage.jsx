@@ -154,7 +154,7 @@ export default function PrompterPage({ showId }) {
   }, [goNext, goPrev]);
 
   if (loading) return (
-    <div style={{ height:"100dvh", background:"#0d0d1a", display:"flex", alignItems:"center", justifyContent:"center", color:"#4ecdc4", fontFamily:"monospace", fontSize:16 }}>Loading…</div>
+    <div style={{ height:"100dvh", background:"#0d0d1a", display:"flex", alignItems:"center", justifyContent:"center", color:"#4ecdc4", fontFamily:"monospace", fontSize:16 }}>Oh Yeah… 🎹</div>
   );
   if (!show || songList.length === 0) return (
     <div style={{ height:"100dvh", background:"#0d0d1a", display:"flex", alignItems:"center", justifyContent:"center", color:"#666688", fontFamily:"monospace", fontSize:16 }}>
@@ -327,7 +327,12 @@ export default function PrompterPage({ showId }) {
                 {upNext.key && <span style={{ color:"#1a4a3a", marginLeft:8 }}>Key {upNext.key}</span>}
               </span>
             ) : songList.length > 0 ? (
-              <span style={{ fontSize:11, color:"#1a4a3a", letterSpacing:"0.15em" }}>— END OF SET —</span>
+              <span style={{ fontSize:11, color:"#1a4a3a", letterSpacing:"0.1em" }}>
+                Danke Schoen… and goodnight.
+                <span style={{ display:"block", fontSize:10, color:"#112a1a", marginTop:2, fontStyle:"italic" }}>
+                  You're still here? It's over. Go home.
+                </span>
+              </span>
             ) : null}
           </div>
 

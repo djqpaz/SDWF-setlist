@@ -168,10 +168,11 @@ export default function SetlistBuilder({ songIds, onChange, showId, baseUrl, loc
   if (songIds.length === 0) {
     return (
       <div style={{
-        flex:1, display:"flex", alignItems:"center", justifyContent:"center",
-        color:colors.textDim, fontSize:14, textAlign:"center", padding:24, fontStyle:"italic",
+        flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+        color:colors.textDim, fontSize:14, textAlign:"center", padding:24,
       }}>
-        ← Click songs from the library to add them here
+        <div style={{ fontStyle:"italic", marginBottom:6 }}>Anyone? Anyone?</div>
+        <div style={{ fontSize:12, opacity:0.6 }}>← Add a song from the library</div>
       </div>
     );
   }

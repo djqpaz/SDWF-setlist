@@ -133,7 +133,7 @@ export default function App() {
   }
 
   function addAllSongs(songIds) {
-    if (activeShow.locked) { showToast("Set is locked 🔒"); return; }
+    if (activeShow.locked) { showToast("Save Ferris 🔒 — set is locked"); return; }
     const existing = new Set(activeShow.songIds);
     const toAdd = songIds.filter(id => !existing.has(id));
     if (toAdd.length === 0) return;
@@ -143,7 +143,7 @@ export default function App() {
   }
 
   function addSong(songId) {
-    if (activeShow.locked) { showToast("Set is locked 🔒"); return; }
+    if (activeShow.locked) { showToast("Save Ferris 🔒 — set is locked"); return; }
     if (!activeShow.songIds.includes(songId)) {
       updateShow(activeShow.id, { songIds: [...activeShow.songIds, songId] });
     }
@@ -330,7 +330,7 @@ export default function App() {
           borderBottom: `1px solid ${colors.borderMed}`,
           background: colors.bgHeader, overflow: "hidden",
         }}>
-          <div style={{ padding: "0 10px", flexShrink: 0, lineHeight: 1.2 }}>
+          <div title="Life moves pretty fast. If you don't stop and look around once in a while, you could miss it." style={{ padding: "0 10px", flexShrink: 0, lineHeight: 1.2, cursor: "default" }}>
             <div style={{ fontSize: 12, color: colors.coral, fontWeight: "bold", letterSpacing: "0.1em" }}>SDWF — Bueller</div>
             <div style={{ fontSize: 8, color: colors.textDim, letterSpacing: "0.08em" }}>Bueller… Bueller… Bueller…</div>
           </div>
@@ -591,7 +591,7 @@ export default function App() {
         borderBottom: `1px solid ${colors.borderMed}`, flexShrink: 0,
         background: colors.bgHeader,
       }}>
-        <div style={{ marginRight: 4, lineHeight: 1.2 }}>
+        <div title="Life moves pretty fast. If you don't stop and look around once in a while, you could miss it." style={{ marginRight: 4, lineHeight: 1.2, cursor: "default" }}>
           <div style={{ fontSize: 12, color: colors.coral, fontWeight: "bold", letterSpacing: "0.1em" }}>SDWF — Bueller</div>
           <div style={{ fontSize: 8, color: colors.textDim, letterSpacing: "0.08em" }}>Bueller… Bueller… Bueller…</div>
         </div>

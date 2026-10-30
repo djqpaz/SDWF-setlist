@@ -73,7 +73,7 @@ function SongCard({ song, index, showChords, editUrl }) {
               <button
                 className="no-print"
                 onClick={() => {
-                  if (window.confirm("Chart editor — band use only.\n\nAre you Kenny or Dave?\n\nIf not, please hit Cancel.")) {
+                  if (window.confirm("Excuse me… are you Abe Froman, the Sausage King of Chicago?\n\nThis is the chart editor — band use only.\n\nIf you're not Kenny or Dave, hit Cancel.")) {
                     window.location.href = editUrl + "&returnTo=" + encodeURIComponent(window.location.href);
                   }
                 }}
@@ -176,7 +176,7 @@ export default function ChartsPage({ showId, songId }) {
 
   if (loading) return (
     <div style={{ minHeight: "100dvh", background: "#1a1a2e", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif" }}>
-      <div style={{ color: "#8888aa", fontSize: 13 }}>Loading…</div>
+      <div style={{ color: "#8888aa", fontSize: 13 }}>Oh Yeah… 🎹</div>
     </div>
   );
   if (!show) return (
