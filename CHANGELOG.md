@@ -6,6 +6,8 @@ work shipped to the live site.
 ## 2026-10-29 — Web Prompter rebuild, set list lock & band charts nav
 
 ### Web Prompter — section-by-section navigation (complete rebuild)
+- **Collapsible song list** — tap ☰ in the header to slide open the full set
+  list; tap any song to jump directly to it; tap outside or ✕ to collapse.
 - **Matches the Pi stage prompter** — the web Prompter View now works the same
   way as the physical Pi prompter on stage: one chart section fills the screen
   at a time instead of scrolling through the whole chart.
