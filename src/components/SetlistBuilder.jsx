@@ -17,7 +17,7 @@ function fmtDuration(secs) {
   return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`;
 }
 
-function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev, pendingRemove, onPendingRemove, chartUrl }) {
+function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev, pendingRemove, onPendingRemove, chartUrl, locked }) {
   const song = songMap[id];
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
 
@@ -45,12 +45,14 @@ function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev, pendingRemo
         userSelect:"none",
       }}>
         {/* drag handle */}
-        <div
-          {...listeners} {...attributes}
-          style={{ color:colors.textDim, cursor:"grab", fontSize:15, flexShrink:0, paddingRight:2, touchAction:"none" }}
-        >
-          ⠿
-        </div>
+        {locked ? (
+          <div style={{ color:colors.textDim, fontSize:15, flexShrink:0, paddingRight:2, opacity:0.3 }}>⠿</div>
+        ) : (
+          <div
+            {...listeners} {...attributes}
+            style={{ color:colors.textDim, cursor:"grab", fontSize:15, flexShrink:0, paddingRight:2, touchAction:"none" }}
+          >⠿</div>
+        )}
         {/* number */}
         <div style={{ color:colors.purple, fontSize:13, minWidth:22, textAlign:"right", fontVariantNumeric:"tabular-nums" }}>
           {index + 1}
@@ -100,8 +102,8 @@ function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev, pendingRemo
             whiteSpace: "nowrap",
           }}>Chart ↗</a>
         )}
-        {/* remove / confirm */}
-        {pendingRemove ? (
+        {/* remove / confirm — hidden when locked */}
+        {!locked && (pendingRemove ? (
           <div style={{ display:"flex", gap:4, flexShrink:0 }}>
             <button
               onClick={() => onRemove(id)}
@@ -128,10 +130,8 @@ function SortableItem({ id, index, onRemove, songMap, sameKeyAsPrev, pendingRemo
               fontSize:18, padding:"0 4px", flexShrink:0, lineHeight:1,
             }}
             title="Remove from set"
-          >
-            ×
-          </button>
-        )}
+          >×</button>
+        ))}
       </div>
     </div>
   );
@@ -141,7 +141,7 @@ export function calcTotalDuration(songIds, songMap) {
   return songIds.reduce((sum, id) => sum + (songMap[id]?.duration || 0), 0);
 }
 
-export default function SetlistBuilder({ songIds, onChange, showId, baseUrl }) {
+export default function SetlistBuilder({ songIds, onChange, showId, baseUrl, locked }) {
   const { songs } = useSongs();
   const songMap = Object.fromEntries(songs.map(s => [s.id, s]));
   const [pendingRemoveId, setPendingRemoveId] = useState(null);
@@ -151,6 +151,7 @@ export default function SetlistBuilder({ songIds, onChange, showId, baseUrl }) {
   );
 
   function handleDragEnd(event) {
+    if (locked) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = songIds.indexOf(active.id);
@@ -190,6 +191,7 @@ export default function SetlistBuilder({ songIds, onChange, showId, baseUrl }) {
               pendingRemove={pendingRemoveId === id}
               onPendingRemove={setPendingRemoveId}
               chartUrl={showId && baseUrl ? `${baseUrl}?charts=${showId}&song=${id}` : null}
+              locked={locked}
             />
           ))}
         </div>

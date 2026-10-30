@@ -118,6 +118,7 @@ export default function App() {
   }
 
   function addAllSongs(songIds) {
+    if (activeShow.locked) { showToast("Set is locked 🔒"); return; }
     const existing = new Set(activeShow.songIds);
     const toAdd = songIds.filter(id => !existing.has(id));
     if (toAdd.length === 0) return;
@@ -127,9 +128,14 @@ export default function App() {
   }
 
   function addSong(songId) {
+    if (activeShow.locked) { showToast("Set is locked 🔒"); return; }
     if (!activeShow.songIds.includes(songId)) {
       updateShow(activeShow.id, { songIds: [...activeShow.songIds, songId] });
     }
+  }
+
+  function toggleLocked() {
+    updateShow(activeShow.id, { locked: !activeShow.locked });
   }
 
   function toggleVoting() {
@@ -281,10 +287,12 @@ export default function App() {
             background: "transparent", border: `1px solid ${colors.purple}`, color: colors.purple,
             borderRadius: 3, cursor: "pointer",
           }}>Share Set</button>
-          <button onClick={() => setShowGenerate(true)} style={{
+          <button onClick={() => !activeShow.locked && setShowGenerate(true)} style={{
             padding: "4px 12px", fontSize: 12, fontFamily: "inherit",
-            background: "transparent", border: `1px solid ${colors.gold}`, color: colors.gold,
-            borderRadius: 3, cursor: "pointer",
+            background: "transparent", border: `1px solid ${activeShow.locked ? colors.borderMed : colors.gold}`,
+            color: activeShow.locked ? colors.textDim : colors.gold,
+            borderRadius: 3, cursor: activeShow.locked ? "default" : "pointer",
+            opacity: activeShow.locked ? 0.4 : 1,
           }}>Build Set</button>
         </div>
       )}
@@ -349,11 +357,12 @@ export default function App() {
 
           {mobileTab === "library" && (
             <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-              <button onClick={() => setShowGenerate(true)} style={{
+              <button onClick={() => !activeShow.locked && setShowGenerate(true)} style={{
                 margin: "10px 12px 4px", padding: "10px",
-                background: "transparent", border: `1px solid ${colors.borderTeal}`, color: colors.teal,
-                borderRadius: 4, cursor: "pointer", fontSize: 13, fontFamily: "inherit",
-                fontWeight: "bold", letterSpacing: "0.05em",
+                background: "transparent", border: `1px solid ${activeShow.locked ? colors.borderMed : colors.borderTeal}`,
+                color: activeShow.locked ? colors.textDim : colors.teal,
+                borderRadius: 4, cursor: activeShow.locked ? "default" : "pointer", fontSize: 13, fontFamily: "inherit",
+                fontWeight: "bold", letterSpacing: "0.05em", opacity: activeShow.locked ? 0.4 : 1,
               }}>✦ Generate Set</button>
               <div style={{ padding: "4px 16px 6px", fontSize: 9, color: colors.textDim, letterSpacing: "0.2em", textTransform: "uppercase" }}>
                 Song Library — {activeShow.songIds.length} in set
@@ -372,11 +381,21 @@ export default function App() {
                 borderBottom: `1px solid ${colors.borderLight}`,
                 display: "flex", justifyContent: "space-between", alignItems: "center",
               }}>
-                <span>Set List — {activeShow.songIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}</span>
-                <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer", fontSize: 9, color: colors.textMuted }}>
-                  <input type="checkbox" checked={!!activeShow.votingEnabled} onChange={toggleVoting} style={{ cursor: "pointer" }} />
-                  Crowd voting
-                </label>
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  Set List — {activeShow.songIds.length} songs{totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}
+                  {activeShow.locked && <span style={{ color: colors.gold, fontSize: 10 }}>🔒</span>}
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button onClick={toggleLocked} style={{
+                    background: "none", border: `1px solid ${activeShow.locked ? colors.gold : colors.borderMed}`,
+                    color: activeShow.locked ? colors.gold : colors.textDim,
+                    borderRadius: 3, padding: "2px 7px", fontSize: 9, cursor: "pointer", fontFamily: "inherit",
+                  }}>{activeShow.locked ? "Unlock" : "Lock"}</button>
+                  <label style={{ display: "flex", alignItems: "center", gap: 4, cursor: "pointer", fontSize: 9, color: colors.textMuted }}>
+                    <input type="checkbox" checked={!!activeShow.votingEnabled} onChange={toggleVoting} style={{ cursor: "pointer" }} />
+                    Crowd voting
+                  </label>
+                </div>
               </div>
               {activeShow.votingEnabled && (
                 <VotePanel show={activeShow} onOpen={openVoting} onClose={closeVoting} onPause={pauseVoting} onResume={resumeVoting} />
@@ -384,7 +403,7 @@ export default function App() {
               <div style={{ flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
                 {isShowMode
                   ? <ShowSetlist songIds={activeShow.songIds} playedSongIds={playedSongIds} voting={voting} songMap={songMap} onMarkPlayed={markPlayed} onUndoPlayed={undoPlayed} />
-                  : <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} showId={activeShow.id} baseUrl={BASE_URL} />
+                  : <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} showId={activeShow.id} baseUrl={BASE_URL} locked={!!activeShow.locked} />
                 }
               </div>
               {!isShowMode && (
@@ -421,10 +440,12 @@ export default function App() {
                     background: "transparent", border: `1px solid ${colors.purple}`, color: colors.purple,
                     borderRadius: 4, cursor: "pointer", lineHeight: 1.3,
                   }}>Share<br/>Set</button>
-                  <button onClick={() => setShowGenerate(true)} style={{
+                  <button onClick={() => !activeShow.locked && setShowGenerate(true)} style={{
                     flex: 1, padding: "9px 4px", fontSize: 13, fontFamily: "inherit",
-                    background: "transparent", border: `1px solid ${colors.gold}`, color: colors.gold,
-                    borderRadius: 4, cursor: "pointer", lineHeight: 1.3,
+                    background: "transparent", border: `1px solid ${activeShow.locked ? colors.borderMed : colors.gold}`,
+                    color: activeShow.locked ? colors.textDim : colors.gold,
+                    borderRadius: 4, cursor: activeShow.locked ? "default" : "pointer", lineHeight: 1.3,
+                    opacity: activeShow.locked ? 0.4 : 1,
                   }}>Build<br/>Set</button>
                 </div>
               )}
@@ -628,15 +649,24 @@ export default function App() {
             borderBottom: `1px solid ${colors.borderLight}`, flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "space-between",
           }}>
-            <span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               Set List — {activeShow.songIds.length} songs
               {totalDuration > 0 ? ` · ${fmtDuration(totalDuration)}` : ""}
-              {!isShowMode && " · drag to reorder"}
+              {!isShowMode && !activeShow.locked && " · drag to reorder"}
+              {activeShow.locked && <span style={{ color: colors.gold }}>🔒 locked</span>}
             </span>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 10, color: colors.textMuted, textTransform: "none" }}>
-              <input type="checkbox" checked={!!activeShow.votingEnabled} onChange={toggleVoting} style={{ cursor: "pointer", accentColor: colors.teal }} />
-              Crowd voting
-            </label>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <button onClick={toggleLocked} style={{
+                background: "none", border: `1px solid ${activeShow.locked ? colors.gold : colors.borderMed}`,
+                color: activeShow.locked ? colors.gold : colors.textDim,
+                borderRadius: 3, padding: "2px 8px", fontSize: 10, cursor: "pointer", fontFamily: "inherit",
+                textTransform: "none",
+              }}>{activeShow.locked ? "Unlock" : "Lock"}</button>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 10, color: colors.textMuted, textTransform: "none" }}>
+                <input type="checkbox" checked={!!activeShow.votingEnabled} onChange={toggleVoting} style={{ cursor: "pointer", accentColor: colors.teal }} />
+                Crowd voting
+              </label>
+            </div>
           </div>
 
           {activeShow.votingEnabled && (
@@ -646,7 +676,7 @@ export default function App() {
           <div style={{ flex: 1, overflowY: "auto" }}>
             {isShowMode
               ? <ShowSetlist songIds={activeShow.songIds} playedSongIds={playedSongIds} voting={voting} songMap={songMap} onMarkPlayed={markPlayed} onUndoPlayed={undoPlayed} />
-              : <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} showId={activeShow.id} baseUrl={BASE_URL} />
+              : <SetlistBuilder songIds={activeShow.songIds} onChange={setSongIds} showId={activeShow.id} baseUrl={BASE_URL} locked={!!activeShow.locked} />
             }
           </div>
         </div>
