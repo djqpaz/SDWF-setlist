@@ -3,6 +3,22 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
+## 2026-10-29 — Web Prompter rebuild, set list lock & band charts nav
+
+### Web Prompter — section-by-section navigation (complete rebuild)
+- **Matches the Pi stage prompter** — the web Prompter View now works the same
+  way as the physical Pi prompter on stage: one chart section fills the screen
+  at a time instead of scrolling through the whole chart.
+- **← Prev / Next →** buttons and **swipe left/right** step through sections;
+  at the end of a song's sections the next tap moves to the next song.
+- **Keyboard navigation**: Arrow Right / Down / Space = next; Arrow Left / Up = prev.
+- **Section progress dots** at the bottom show how far through the song you are;
+  tap any dot to jump directly to that section.
+- **Up-next strip** below the content shows the next section label, or the next
+  song's title and key when you're on the last section.
+- **Note bar** (amber) shows Patrick's per-song sound notes on every section.
+- Long lines wrap correctly — no more text running off the right edge.
+
 ## 2026-10-29 — Set list lock & band charts nav
 
 ### Band Charts — floating navigation
