@@ -3,6 +3,12 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
+## 2026-10-30 — Band Charts & Prompter improvements, app renamed to Bueller
+
+### App renamed
+- The set list app is now called **Bueller** — browser tab, bookmarks, and link
+  previews all show "Bueller | Sick Day with Ferris".
+
 ## 2026-10-30 — Band Charts & Prompter improvements
 
 ### Band Charts — Edit chart link
