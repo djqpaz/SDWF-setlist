@@ -3,6 +3,20 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
+## 2026-10-30 — Bit script viewer + bits in Band Charts
+
+### Tap a bit to read its script
+- Cameron Bit rows in the setlist now show a **▾** when they have script
+  content — tap the bit title to open a bottom-sheet with the full script,
+  speaker info, and type badge; tap the backdrop or × to dismiss
+
+### Band Charts — Cameron Bits between songs
+- Cameron Bits now appear in the Band Charts page between the songs they
+  precede, shown as teal accent cards with the full script text
+- The Set List TOC in Band Charts also lists bits (teal ▸, italic) at
+  their correct position between song entries
+- Floating ← Prev / Next → navigation still jumps between songs only
+
 ## 2026-10-30 — Christmas Show script entered
 
 ### 17 Cameron Bits added for The Christmas Show (2026)
