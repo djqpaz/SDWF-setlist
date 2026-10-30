@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
-import { doc, onSnapshot, collection } from "firebase/firestore";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { collection, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 
 const CH = /^[A-G][#b]?(maj|min|m|dim|aug|sus|add|M)?\d*(sus\d|add\d|[#b]\d+)*(\/[A-G][#b]?)?$/;
@@ -10,39 +10,48 @@ function parseLine(l) {
   cur.t += l.slice(last); segs.push(cur); return segs;
 }
 
-function renderChart(chart, note) {
-  const lines = chart.split("\n").slice(1);
-  if (note && lines[0] === note) lines.shift();
-  return lines.map((raw, idx) => {
+function parseSections(chart, note) {
+  if (!chart) return [];
+  const rawLines = chart.split("\n").slice(1);
+  const lines = (note && rawLines[0] === note) ? rawLines.slice(1) : rawLines;
+  const sections = [];
+  let cur = { label: null, subtitle: null, lines: [] };
+  for (const raw of lines) {
     const l = raw.replace(/\s+$/, "");
-    if (!l.trim()) return <div key={idx} style={{ height: "0.6em" }} />;
     const sm = l.match(/^\[([^\]]+)\]\s*(?:\((.*)\))?\s*$/);
     if (sm && !CH.test(sm[1])) {
-      return (
-        <div key={idx} style={{
-          display: "flex", gap: 12, alignItems: "baseline",
-          margin: "18px 0 6px", flexWrap: "wrap",
-        }}>
-          <span style={{
-            background: "#1a3a38", color: "#4ecdc4",
-            borderLeft: "4px solid #4ecdc4", padding: "2px 14px",
-            fontSize: 18, letterSpacing: "0.1em", fontWeight: "bold",
-          }}>{sm[1]}</span>
-          {sm[2] && <span style={{ color: "#8888aa", fontSize: 16 }}>{sm[2]}</span>}
-        </div>
-      );
+      if (cur.label !== null || cur.lines.some(ln => ln.trim())) sections.push(cur);
+      cur = { label: sm[1], subtitle: sm[2] || null, lines: [] };
+    } else {
+      cur.lines.push(raw);
     }
+  }
+  if (cur.label !== null || cur.lines.some(ln => ln.trim())) sections.push(cur);
+  // If no section markers, treat whole chart as one unlabeled section
+  return sections.length ? sections : [{ label: null, subtitle: null, lines }];
+}
+
+function SectionContent({ lines }) {
+  // Trim leading/trailing blank lines
+  const first = lines.findIndex(l => l.trim());
+  const last  = lines.length - 1 - [...lines].reverse().findIndex(l => l.trim());
+  const trimmed = first < 0 ? [] : lines.slice(first, last + 1);
+
+  return trimmed.map((raw, idx) => {
+    const l = raw.replace(/\s+$/, "");
+    if (!l.trim()) return <div key={idx} style={{ height: "0.5em" }} />;
     const segs = parseLine(l);
     const chordOnly = segs.every(s => !s.t.trim());
     return (
-      <div key={idx} style={{
-        display: "flex", flexWrap: "wrap", alignItems: "flex-end",
-        minHeight: "2em", opacity: chordOnly ? 0.75 : 1,
-      }}>
+      <div key={idx} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", marginBottom: 2, opacity: chordOnly ? 0.65 : 1 }}>
         {segs.map((s, i) => (
           <span key={i} style={{ display: "inline-flex", flexDirection: "column" }}>
-            <span style={{ color: "#ff6b6b", fontWeight: "bold", height: "1.5em", whiteSpace: "pre", paddingRight: "0.5em", fontSize: 22 }}>{s.c || " "}</span>
-            <span style={{ whiteSpace: "pre", fontSize: 26 }}>{s.t || (s.c ? " " : "")}</span>
+            <span style={{ color: "#ff6b6b", fontWeight: "bold", height: "1.4em", whiteSpace: "pre-wrap", paddingRight: "0.5em", fontSize: "clamp(15px,2.8vw,20px)" }}>
+              {s.c || " "}
+            </span>
+            <span style={{ whiteSpace: "pre-wrap", fontSize: "clamp(22px,4vw,30px)", lineHeight: 1.35 }}>
+              {s.t || (s.c ? " " : "")}
+            </span>
           </span>
         ))}
       </div>
@@ -51,25 +60,29 @@ function renderChart(chart, note) {
 }
 
 export default function PrompterPage({ showId }) {
-  const [show, setShow] = useState(null);
-  const [songs, setSongs] = useState({});
-  const [currentIdx, setCurrentIdx] = useState(0);
+  const [show, setShow]       = useState(null);
+  const [songs, setSongs]     = useState({});
+  const [songIdx, setSongIdx] = useState(0);
+  const [secIdx, setSecIdx]   = useState(0);
   const [loading, setLoading] = useState(true);
+  const touchStartX = useRef(null);
+  const contentRef  = useRef(null);
 
-  // Override global overflow:hidden
   useEffect(() => {
+    const root = document.getElementById("root");
     document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
-    document.getElementById("root").style.overflow = "hidden";
+    if (root) root.style.overflow = "hidden";
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+      if (root) root.style.overflow = "";
+    };
   }, []);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "shows", showId), snap => {
-      if (snap.exists()) {
-        const data = { id: snap.id, ...snap.data() };
-        setShow(data);
-        document.title = `Prompter — ${data.name} | SDWF`;
-      }
+      if (snap.exists()) { setShow({ id: snap.id, ...snap.data() }); document.title = `Prompter — ${snap.data().name} | SDWF`; }
       setLoading(false);
     });
     return () => { unsub(); document.title = "Sick Day with Ferris"; };
@@ -84,181 +97,171 @@ export default function PrompterPage({ showId }) {
     return unsub;
   }, []);
 
-  const songList = (show?.songIds || []).map(id => songs[String(id)] || songs[id]).filter(Boolean);
-  const totalSongs = songList.length;
+  const songList = useMemo(
+    () => (show?.songIds || []).map(id => songs[String(id)] || songs[id]).filter(Boolean),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [show?.songIds?.join(","), songs]
+  );
 
-  const goNext = useCallback(() => setCurrentIdx(i => Math.min(i + 1, totalSongs - 1)), [totalSongs]);
-  const goPrev = useCallback(() => setCurrentIdx(i => Math.max(i - 1, 0)), []);
+  const song     = songList[songIdx];
+  const sections = useMemo(() => parseSections(song?.chart, song?.note), [song?.chart, song?.note]);
 
-  // Keyboard nav: ← prev, → next, space next
+  // Reset to section 0 when song changes
+  useEffect(() => { setSecIdx(0); }, [songIdx]);
+  // Clamp secIdx if sections shrink
+  useEffect(() => { if (sections.length && secIdx >= sections.length) setSecIdx(sections.length - 1); }, [sections.length]);
+  // Scroll content to top when section changes
+  useEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [songIdx, secIdx]);
+
+  const isFirst = songIdx === 0 && secIdx === 0;
+  const isLast  = songIdx === songList.length - 1 && secIdx >= Math.max(0, sections.length - 1);
+
+  const goNext = useCallback(() => {
+    if (secIdx < sections.length - 1) { setSecIdx(s => s + 1); }
+    else if (songIdx < songList.length - 1) { setSongIdx(s => s + 1); setSecIdx(0); }
+  }, [secIdx, sections.length, songIdx, songList.length]);
+
+  const goPrev = useCallback(() => {
+    if (secIdx > 0) { setSecIdx(s => s - 1); }
+    else if (songIdx > 0) { setSongIdx(s => s - 1); setSecIdx(0); }
+  }, [secIdx, songIdx]);
+
   useEffect(() => {
     function onKey(e) {
-      if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === " ") {
-        e.preventDefault(); goNext();
-      }
-      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-        e.preventDefault(); goPrev();
-      }
+      if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === " ") { e.preventDefault(); goNext(); }
+      if (e.key === "ArrowLeft"  || e.key === "ArrowUp")                    { e.preventDefault(); goPrev(); }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [goNext, goPrev]);
 
-  // Keep currentIdx in bounds when setlist changes
-  useEffect(() => {
-    if (totalSongs > 0 && currentIdx >= totalSongs) setCurrentIdx(totalSongs - 1);
-  }, [totalSongs]);
-
   if (loading) return (
-    <div style={{
-      height: "100dvh", background: "#0d0d1a",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      color: "#4ecdc4", fontFamily: "monospace", fontSize: 16,
-    }}>
-      Loading…
-    </div>
+    <div style={{ height:"100dvh", background:"#0d0d1a", display:"flex", alignItems:"center", justifyContent:"center", color:"#4ecdc4", fontFamily:"monospace", fontSize:16 }}>Loading…</div>
   );
-
-  if (!show || totalSongs === 0) return (
-    <div style={{
-      height: "100dvh", background: "#0d0d1a",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      color: "#666688", fontFamily: "monospace", fontSize: 16,
-    }}>
+  if (!show || songList.length === 0) return (
+    <div style={{ height:"100dvh", background:"#0d0d1a", display:"flex", alignItems:"center", justifyContent:"center", color:"#666688", fontFamily:"monospace", fontSize:16 }}>
       {!show ? "Show not found." : "No songs in this set."}
     </div>
   );
 
-  const song = songList[currentIdx];
-  const nextSong = songList[currentIdx + 1];
+  const curSection  = sections[secIdx];
+  const nextSection = sections[secIdx + 1];
+  const nextSong    = songList[songIdx + 1];
+  const upNext = nextSection
+    ? { label: nextSection.label, isSong: false }
+    : nextSong ? { label: nextSong.title, key: nextSong.key, isSong: true }
+    : null;
 
   return (
     <div style={{
-      display: "flex", height: "100dvh",
-      background: "#0d0d1a", color: "#f0f0f0",
-      fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-      overflow: "hidden",
-      userSelect: "none",
+      display:"flex", flexDirection:"column", height:"100dvh",
+      background:"#0d0d1a", color:"#f0f0f0", overflow:"hidden",
+      fontFamily:"ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+      userSelect:"none",
     }}>
-      {/* Left: song list nav */}
+
+      {/* ── Header ── */}
       <div style={{
-        width: 220, minWidth: 220, flexShrink: 0,
-        background: "#11112a", borderRight: "1px solid #1e1e3a",
-        overflowY: "auto", display: "flex", flexDirection: "column",
+        display:"flex", alignItems:"center", gap:10, padding:"10px 18px",
+        background:"#0a0a18", borderBottom:"1px solid #1e1e3a", flexShrink:0,
       }}>
-        <div style={{
-          padding: "12px 14px 8px",
-          fontSize: 10, color: "#ff6b6b", letterSpacing: "0.2em",
-          textTransform: "uppercase", fontWeight: "bold",
-          borderBottom: "1px solid #1e1e3a",
-        }}>
-          {show.name}
-        </div>
-        {songList.map((s, i) => (
-          <button key={s.id ?? i} onClick={() => setCurrentIdx(i)} style={{
-            display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
-            background: i === currentIdx ? "#1e1e3a" : "transparent",
-            border: "none", borderLeft: i === currentIdx ? "3px solid #4ecdc4" : "3px solid transparent",
-            color: i === currentIdx ? "#f0f0f0" : "#888899",
-            cursor: "pointer", textAlign: "left", width: "100%", fontFamily: "inherit",
-            fontSize: 13, lineHeight: 1.3,
-          }}>
-            <span style={{
-              fontSize: 11, color: i === currentIdx ? "#4ecdc4" : "#444460",
-              minWidth: 22, textAlign: "right", fontVariantNumeric: "tabular-nums",
-            }}>{i + 1}</span>
-            <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {s.title}
-            </span>
-          </button>
-        ))}
+        <span style={{ fontSize:11, color:"#4ecdc4", fontWeight:"bold", fontVariantNumeric:"tabular-nums", flexShrink:0 }}>
+          {songIdx + 1}&nbsp;/&nbsp;{songList.length}
+        </span>
+        <span style={{ fontSize:20, fontWeight:"bold", color:"#f0f0f0", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+          {song.title}
+        </span>
+        {song.key && (
+          <span style={{ fontSize:13, fontWeight:"bold", padding:"2px 10px", borderRadius:99, background:"#132626", border:"1px solid #2a6e6b", color:"#4ecdc4", flexShrink:0 }}>
+            {song.key}
+          </span>
+        )}
+        {song.bpm && (
+          <span style={{ fontSize:12, color:"#555570", flexShrink:0 }}>{song.bpm} BPM</span>
+        )}
       </div>
 
-      {/* Right: current song chart */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        {/* Song header */}
-        <div style={{
-          padding: "14px 24px 12px",
-          background: "#11112a", borderBottom: "1px solid #1e1e3a",
-          flexShrink: 0,
-        }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 11, color: "#4ecdc4", fontVariantNumeric: "tabular-nums" }}>
-              {currentIdx + 1} / {totalSongs}
-            </span>
-            <span style={{ fontSize: 32, fontWeight: "bold", color: "#f0f0f0", fontFamily: "Georgia, serif", lineHeight: 1.1 }}>
-              {song.title}
-            </span>
-            <span style={{ fontSize: 14, color: "#888899" }}>{song.artist}</span>
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8, alignItems: "center" }}>
-            {song.key && (
-              <span style={{
-                fontSize: 13, fontWeight: "bold", padding: "3px 10px",
-                borderRadius: 99, background: "#132626", border: "1px solid #2a6e6b", color: "#4ecdc4",
-              }}>Key {song.key}</span>
-            )}
-            {song.bpm && (
-              <span style={{
-                fontSize: 13, padding: "3px 10px",
-                borderRadius: 99, background: "#1e1e2e", border: "1px solid #2a2a4a", color: "#aaaacc",
-              }}>{song.bpm} BPM</span>
-            )}
-            {song.capo > 0 && (
-              <span style={{
-                fontSize: 13, padding: "3px 10px",
-                borderRadius: 99, background: "#1e1e2e", border: "1px solid #2a2a4a", color: "#aaaacc",
-              }}>Capo {song.capo}</span>
-            )}
-            {song.note && (
-              <span style={{ fontSize: 14, color: "#f4c542", marginLeft: 4 }}>{song.note}</span>
-            )}
-          </div>
+      {/* ── Note bar ── */}
+      {song.note && (
+        <div style={{ padding:"6px 18px", background:"#140f00", borderBottom:"1px solid #3a2800", fontSize:13, color:"#f4c542", flexShrink:0, lineHeight:1.4 }}>
+          {song.note}
         </div>
+      )}
 
-        {/* Chart area */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 28px 80px" }}>
-          {song.chart
-            ? renderChart(song.chart, song.note)
-            : (
-              <div style={{ color: "#444460", fontStyle: "italic", marginTop: 24, fontSize: 18 }}>
-                No chart for this song yet.
-              </div>
-            )
-          }
-        </div>
-
-        {/* Bottom nav bar */}
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "10px 20px", background: "#0d0d1a", borderTop: "1px solid #1e1e3a",
-          flexShrink: 0, gap: 12,
-        }}>
-          <button onClick={goPrev} disabled={currentIdx === 0} style={{
-            padding: "12px 24px", fontSize: 18, background: "#1a1a2e",
-            border: "1px solid #2a2a4a", color: currentIdx === 0 ? "#333348" : "#f0f0f0",
-            borderRadius: 6, cursor: currentIdx === 0 ? "default" : "pointer",
-            fontFamily: "inherit",
-          }}>← Prev</button>
-
-          {nextSong ? (
-            <div style={{ flex: 1, textAlign: "center", color: "#555570", fontSize: 12 }}>
-              Up next: <span style={{ color: "#aaaacc" }}>{nextSong.title}</span>
-              {nextSong.key && <span style={{ color: "#4ecdc4", marginLeft: 8 }}>Key {nextSong.key}</span>}
-            </div>
-          ) : (
-            <div style={{ flex: 1, textAlign: "center", color: "#4ecdc4", fontSize: 12, letterSpacing: "0.15em" }}>
-              END OF SET
-            </div>
+      {/* ── Section label ── */}
+      {curSection?.label && (
+        <div style={{ padding:"7px 18px", background:"#091a1a", borderBottom:"1px solid #0e3030", flexShrink:0, display:"flex", alignItems:"baseline", gap:10 }}>
+          <span style={{ background:"#0f2e2e", color:"#4ecdc4", borderLeft:"4px solid #4ecdc4", padding:"3px 16px", fontSize:15, letterSpacing:"0.12em", fontWeight:"bold" }}>
+            {curSection.label}
+          </span>
+          {curSection.subtitle && (
+            <span style={{ color:"#556668", fontSize:13 }}>{curSection.subtitle}</span>
           )}
-
-          <button onClick={goNext} disabled={currentIdx >= totalSongs - 1} style={{
-            padding: "12px 24px", fontSize: 18, background: "#1a1a2e",
-            border: "1px solid #2a2a4a", color: currentIdx >= totalSongs - 1 ? "#333348" : "#f0f0f0",
-            borderRadius: 6, cursor: currentIdx >= totalSongs - 1 ? "default" : "pointer",
-            fontFamily: "inherit",
-          }}>Next →</button>
         </div>
+      )}
+
+      {/* ── Chart content ── */}
+      <div
+        ref={contentRef}
+        style={{ flex:1, overflowY:"auto", padding:"18px 22px 10px", WebkitOverflowScrolling:"touch" }}
+        onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
+        onTouchEnd={e => {
+          if (touchStartX.current == null) return;
+          const dx = e.changedTouches[0].clientX - touchStartX.current;
+          touchStartX.current = null;
+          if (Math.abs(dx) > 60) { dx < 0 ? goNext() : goPrev(); }
+        }}
+      >
+        {curSection ? (
+          <SectionContent lines={curSection.lines} />
+        ) : (
+          <div style={{ color:"#444460", fontStyle:"italic", fontSize:18, marginTop:24 }}>No chart for this song.</div>
+        )}
+      </div>
+
+      {/* ── Up next strip ── */}
+      <div style={{ padding:"5px 18px", background:"#080810", borderTop:"1px solid #111126", flexShrink:0, minHeight:28, display:"flex", alignItems:"center", gap:6 }}>
+        {upNext ? (
+          <span style={{ fontSize:12, color:"#2a2a50" }}>
+            {upNext.isSong ? "↓ Next song: " : "↓ "}<span style={{ color:"#2a3a4a" }}>{upNext.label}</span>
+            {upNext.key && <span style={{ color:"#1a4a3a", marginLeft:8 }}>Key {upNext.key}</span>}
+          </span>
+        ) : songList.length > 0 ? (
+          <span style={{ fontSize:11, color:"#1a4a3a", letterSpacing:"0.15em" }}>— END OF SET —</span>
+        ) : null}
+      </div>
+
+      {/* ── Bottom nav ── */}
+      <div style={{
+        display:"flex", alignItems:"center", padding:"10px 14px", gap:10,
+        background:"#080810", borderTop:"1px solid #1a1a30", flexShrink:0,
+      }}>
+        <button onClick={goPrev} disabled={isFirst} style={{
+          padding:"14px 22px", fontSize:17, background:"#111124",
+          border:"1px solid #2a2a4a", color: isFirst ? "#252540" : "#c0c0d8",
+          borderRadius:6, cursor: isFirst ? "default" : "pointer", fontFamily:"inherit", flexShrink:0,
+        }}>← Prev</button>
+
+        {/* Section progress dots */}
+        <div style={{ flex:1, display:"flex", gap:5, justifyContent:"center", alignItems:"center", flexWrap:"wrap" }}>
+          {sections.length > 1 ? sections.map((s, i) => (
+            <div key={i} onClick={() => setSecIdx(i)} title={s.label || `Section ${i + 1}`} style={{
+              height:7, width: i === secIdx ? 22 : 7,
+              borderRadius:99, background: i === secIdx ? "#4ecdc4" : "#252545",
+              cursor:"pointer", transition:"all 0.18s", flexShrink:0,
+            }} />
+          )) : (
+            <span style={{ fontSize:11, color:"#333358", letterSpacing:"0.1em" }}>
+              {sections.length === 1 && curSection?.label ? curSection.label : ""}
+            </span>
+          )}
+        </div>
+
+        <button onClick={goNext} disabled={isLast} style={{
+          padding:"14px 22px", fontSize:17, background:"#111124",
+          border:"1px solid #2a2a4a", color: isLast ? "#252540" : "#c0c0d8",
+          borderRadius:6, cursor: isLast ? "default" : "pointer", fontFamily:"inherit", flexShrink:0,
+        }}>Next →</button>
       </div>
     </div>
   );
