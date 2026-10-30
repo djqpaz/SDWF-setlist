@@ -244,7 +244,10 @@ export default function ChartsPage({ showId, songId }) {
         }}>
           {[
             { label: "← Prev", disabled: currentIdx === 0, onClick: () => scrollToSong(currentIdx - 1) },
-            { label: "↑ Top",  disabled: false,             onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
+            { label: "↑ Top",  disabled: false,             onClick: () => {
+              document.getElementById("root")?.scrollTo({ top: 0, behavior: "smooth" });
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }},
             { label: "Next →", disabled: currentIdx === songList.length - 1, onClick: () => scrollToSong(currentIdx + 1) },
           ].map(({ label, disabled, onClick }) => (
             <button key={label} onClick={onClick} disabled={disabled} style={{
