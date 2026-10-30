@@ -3,7 +3,14 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
-## 2026-10-29 — Set list lock
+## 2026-10-29 — Set list lock & band charts nav
+
+### Band Charts — floating navigation
+- **← Prev / ↑ Top / Next →** floating pill bar at the bottom of the Band
+  Charts page. Jumps between songs without scrolling back to the TOC.
+  Previous is grayed out on the first song, Next on the last. Hidden from print.
+
+### Set list lock
 
 - **Lock set list** — a new **Lock / Unlock** button in the setlist header
   (both mobile and desktop) prevents any changes to the set order once you're
