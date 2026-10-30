@@ -51,7 +51,7 @@ function renderChart(chart, note, showChords = true) {
   });
 }
 
-function SongCard({ song, index, showChords }) {
+function SongCard({ song, index, showChords, editUrl }) {
   return (
     <article style={{
       background: "#1e1e34", border: "1px solid #2a2a4a", borderRadius: 8,
@@ -65,10 +65,15 @@ function SongCard({ song, index, showChords }) {
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 22, lineHeight: 1.2, color: "#f7f7f7" }}>{song.title}</div>
           <div style={{ color: "#8888aa", fontSize: 14, marginTop: 2 }}>{song.artist}</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8, alignItems: "center" }}>
             {song.key && <span style={{ fontSize: 12, fontWeight: 600, padding: "2px 9px", borderRadius: 99, background: "#132626", border: "1px solid #2a6e6b", color: "#4ecdc4" }}>Key {song.key}</span>}
             <span style={{ fontSize: 12, fontWeight: 600, padding: "2px 9px", borderRadius: 99, background: "#22223a", border: "1px solid #2a2a4a", color: "#b8b8cc" }}>{song.bpm} BPM</span>
             {song.capo > 0 && <span style={{ fontSize: 12, fontWeight: 600, padding: "2px 9px", borderRadius: 99, background: "#22223a", border: "1px solid #2a2a4a", color: "#b8b8cc" }}>Capo {song.capo}</span>}
+            {editUrl && (
+              <a href={editUrl} className="no-print" style={{ fontSize: 11, color: "#8888aa", border: "1px solid #2a2a4a", borderRadius: 4, padding: "2px 8px", textDecoration: "none", marginLeft: "auto" }}>
+                ✎ Edit chart
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -94,6 +99,8 @@ function SongCard({ song, index, showChords }) {
     </article>
   );
 }
+
+const APP_URL = `${window.location.origin}${window.location.pathname}`;
 
 export default function ChartsPage({ showId, songId }) {
   const [show, setShow] = useState(null);
@@ -181,7 +188,7 @@ export default function ChartsPage({ showId, songId }) {
   if (songId && songList.length === 1) {
     return (
       <div style={{ minHeight: "100dvh", background: "#1a1a2e", color: "#f7f7f7", fontFamily: "sans-serif", padding: "24px 16px" }}>
-        <SongCard song={songList[0]} index={0} showChords={true} />
+        <SongCard song={songList[0]} index={0} showChords={true} editUrl={`${APP_URL}?editSong=${songList[0].id}`} />
       </div>
     );
   }
@@ -229,7 +236,7 @@ export default function ChartsPage({ showId, songId }) {
 
         {songList.map((song, i) => (
           <div key={song.id ?? i} id={`chart-${i}`}>
-            <SongCard song={song} index={i} showChords={showChords} />
+            <SongCard song={song} index={i} showChords={showChords} editUrl={`${APP_URL}?editSong=${song.id}`} />
           </div>
         ))}
       </main>

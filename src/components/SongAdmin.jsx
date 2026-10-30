@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -110,7 +110,7 @@ function SongForm({ initial, onSave, onCancel, saving }) {
   );
 }
 
-export default function SongAdmin({ onClose, onToast }) {
+export default function SongAdmin({ onClose, onToast, initialSongId }) {
   const { songs } = useSongs();
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -119,6 +119,15 @@ export default function SongAdmin({ onClose, onToast }) {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [chartFor, setChartFor] = useState(null);
   const [bulkImporting, setBulkImporting] = useState(false);
+
+  // Auto-open chart editor when launched with a specific song
+  useEffect(() => {
+    if (initialSongId && songs.length > 0) {
+      const song = songs.find(s => String(s.id) === String(initialSongId));
+      if (song) setChartFor(song);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSongId, songs.length > 0]);
 
   const filtered = songs
     .filter(s => {

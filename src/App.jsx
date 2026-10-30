@@ -39,7 +39,20 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [editSongId, setEditSongId] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  // Handle ?editSong=ID deep-link from Band Charts page
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("editSong");
+    if (id) {
+      setShowAdmin(true);
+      setEditSongId(id);
+      // Clean the URL without reloading
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "shows"), async (snapshot) => {
@@ -482,7 +495,7 @@ export default function App() {
             onClose={() => setShowGenerate(false)}
           />
         )}
-        {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} onToast={showToast} />}
+        {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} onToast={showToast} initialSongId={editSongId} />}
         {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
         {confirmDialog && (
           <ConfirmDialog
@@ -686,7 +699,7 @@ export default function App() {
       {showGenerate && (
         <GenerateModal currentSongIds={activeShow.songIds} onGenerate={setSongIds} onDuplicate={duplicateShowWithSongs} onClose={() => setShowGenerate(false)} />
       )}
-      {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} onToast={showToast} />}
+      {showAdmin && <SongAdmin onClose={() => setShowAdmin(false)} onToast={showToast} initialSongId={editSongId} />}
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
       {confirmDialog && (
         <ConfirmDialog
