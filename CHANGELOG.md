@@ -3,6 +3,19 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
+## 2026-10-29 — Set list lock
+
+- **Lock set list** — a new **Lock / Unlock** button in the setlist header
+  (both mobile and desktop) prevents any changes to the set order once you're
+  happy with it. When locked:
+  - Drag-to-reorder is disabled (handles go faint)
+  - Remove buttons are hidden
+  - Adding songs from the library shows a "Set is locked 🔒" toast
+  - Build Set / Generate Set buttons are grayed out
+  - 🔒 icon appears next to the song count as a reminder
+  - Lock state is stored in Firestore so it survives refreshes and syncs
+    to every device
+
 ## 2026-10-27 — Pi prompter rebuild, band charts fixes & charting tools
 
 ### Pi Stage Prompter (complete rebuild)
