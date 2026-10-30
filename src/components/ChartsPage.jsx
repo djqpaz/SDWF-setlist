@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { doc, onSnapshot, collection } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -100,6 +100,7 @@ export default function ChartsPage({ showId, songId }) {
   const [songs, setSongs] = useState({});
   const [loading, setLoading] = useState(true);
   const [showChords, setShowChords] = useState(true);
+  const [currentIdx, setCurrentIdx] = useState(0);
 
   useEffect(() => {
     document.documentElement.style.overflow = "auto";
@@ -132,6 +133,33 @@ export default function ChartsPage({ showId, songId }) {
     });
     return unsub;
   }, []);
+
+  const songListLen = show
+    ? (show.songIds || []).map(id => songs[String(id)] || songs[id]).filter(Boolean).length
+    : 0;
+
+  useEffect(() => {
+    if (songListLen <= 1) return;
+    const visible = new Set();
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        const idx = parseInt(e.target.id.replace("chart-", ""), 10);
+        if (e.isIntersecting) visible.add(idx);
+        else visible.delete(idx);
+      });
+      if (visible.size > 0) setCurrentIdx(Math.min(...visible));
+    }, { threshold: 0.05 });
+    for (let i = 0; i < songListLen; i++) {
+      const el = document.getElementById(`chart-${i}`);
+      if (el) obs.observe(el);
+    }
+    return () => obs.disconnect();
+  }, [songListLen]);
+
+  function scrollToSong(idx) {
+    const el = document.getElementById(`chart-${idx}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   if (loading) return (
     <div style={{ minHeight: "100dvh", background: "#1a1a2e", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif" }}>
@@ -205,6 +233,34 @@ export default function ChartsPage({ showId, songId }) {
           </div>
         ))}
       </main>
+
+      {/* Floating song navigation */}
+      {songList.length > 1 && (
+        <div className="no-print" style={{
+          position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)",
+          display: "flex", background: "rgba(19,19,42,0.93)", backdropFilter: "blur(10px)",
+          border: "1px solid #2a2a4a", borderRadius: 99, overflow: "hidden",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.5)", zIndex: 100,
+        }}>
+          {[
+            { label: "← Prev", disabled: currentIdx === 0, onClick: () => scrollToSong(currentIdx - 1) },
+            { label: "↑ Top",  disabled: false,             onClick: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
+            { label: "Next →", disabled: currentIdx === songList.length - 1, onClick: () => scrollToSong(currentIdx + 1) },
+          ].map(({ label, disabled, onClick }) => (
+            <button key={label} onClick={onClick} disabled={disabled} style={{
+              padding: "10px 18px", border: "none", background: "transparent",
+              color: disabled ? "#444466" : "#d0d0e8",
+              cursor: disabled ? "default" : "pointer",
+              fontSize: 13, fontFamily: "inherit", fontWeight: 600,
+              borderRight: label !== "Next →" ? "1px solid #2a2a4a" : "none",
+              transition: "color 0.15s",
+            }}
+            onMouseEnter={e => { if (!disabled) e.currentTarget.style.color = "#f7f7f7"; }}
+            onMouseLeave={e => { if (!disabled) e.currentTarget.style.color = "#d0d0e8"; }}
+            >{label}</button>
+          ))}
+        </div>
+      )}
 
       <style>{`
         @media print {
