@@ -6,6 +6,12 @@ APP="/home/sdwf/prompter/prompter.html"
 PROFILE="/home/sdwf/.prompter-chrome"
 LIBRARY="/home/sdwf/prompter/library.json"
 LIBRARY_URL="https://djqpaz.github.io/SDWF-setlist/library.json"
+APP_URL="https://raw.githubusercontent.com/djqpaz/SDWF-setlist/main/pi/prompter.html"
+
+# Pull the latest prompter code (fail silently — keep existing file if offline).
+wget -q --timeout=10 -O "$APP.tmp" "$APP_URL" \
+  && mv "$APP.tmp" "$APP" \
+  || { echo "prompter update skipped (offline or failed)"; rm -f "$APP.tmp"; }
 
 # Pull the latest setlist from the website (fail silently — use cached copy if offline).
 wget -q --timeout=10 -O "$LIBRARY.tmp" "$LIBRARY_URL" \
