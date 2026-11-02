@@ -125,7 +125,12 @@
 const PROJECT = "sdwf-setlist";
 const API_KEY = "AIzaSyB4ZCM-WGSgGTZra0tuQ6WbZyMUfbt6BNU";
 const FS = "https://firestore.googleapis.com/v1/projects/" + PROJECT + "/databases/(default)/documents";
-const VER = "v1.0";
+const VER = "v1.4";
+// v1.0 — initial release (USB JSON, GPIO footswitch)
+// v1.1 — ChordPro inline chords, section-by-section navigation
+// v1.2 — Firestore live sync, pulls all shows on boot, localStorage cache
+// v1.3 — Long-press SELECT → main menu from any screen; long-press BACK → top of song
+// v1.4 — Auto-fit font on long sections (no more scroll); auto-update prompter.html on boot
 const LONG_MS = 700; // long-press threshold
 
 // ── State ─────────────────────────────────────────────────────────────────────

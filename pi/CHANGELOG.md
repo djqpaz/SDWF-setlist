@@ -1,5 +1,20 @@
 # Pi Prompter Changelog
 
+## v1.4 — 2026-11-02
+
+### Auto-fit font on long sections
+Long verses no longer scroll off screen. After rendering each section the
+prompter measures whether the content overflows and shrinks the lyric font
+(34 → 16px minimum, in 2px steps), scaling chord size and line gaps
+proportionally, until everything fits on one screen.
+
+### Auto-update prompter.html on boot
+`kiosk.sh` now pulls the latest `prompter.html` from GitHub on every boot
+(same pattern as the existing `library.json` sync). Any future code fix ships
+automatically — just push to GitHub and reboot the Pi.
+
+---
+
 ## 2026-10-27
 
 ### Fixed — section headers parsed as chords
