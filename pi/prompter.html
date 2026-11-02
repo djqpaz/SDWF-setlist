@@ -439,6 +439,20 @@ function renderLive() {
     linesDiv.appendChild(ld);
   });
   body.appendChild(linesDiv);
+  // Auto-fit: shrink font until lines stop scrolling
+  requestAnimationFrame(() => {
+    let lyric = 34, chord = 26, gap = 14;
+    const MIN = 16;
+    while (lyric > MIN && linesDiv.scrollHeight > linesDiv.clientHeight) {
+      lyric -= 2;
+      chord = Math.max(14, Math.round(lyric * 0.76));
+      gap   = Math.max(4, gap - 2);
+      linesDiv.style.setProperty("--lyric", lyric + "px");
+      linesDiv.querySelectorAll(".ch").forEach(e => { e.style.fontSize = chord + "px"; e.style.height = (chord * 1.5) + "px"; });
+      linesDiv.querySelectorAll(".spc").forEach(e => e.style.height = (chord * 1.5) + "px");
+      linesDiv.querySelectorAll(".line").forEach(e => e.style.marginBottom = gap + "px");
+    }
+  });
 
   // Next section preview
   if (next) {
