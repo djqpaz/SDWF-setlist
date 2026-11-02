@@ -116,6 +116,34 @@
     }
     .btn.primary { background: var(--green); color: #000; }
     .btn.outline { border: 3px solid var(--dark); color: oklch(0.9 0.01 90); }
+
+    /* ── Cameron Bit styles ──────────────────────────────────────────────── */
+    .bit-hd { background: #1a1a2e; color: #fff; }
+    .bit-type-banner {
+      padding: 14px 28px; font: 700 30px/1 var(--font); letter-spacing: 0.07em;
+      flex-shrink: 0;
+    }
+    .bit-type-narration  { background: #4ecdc4; color: #000; }
+    .bit-type-emcee      { background: #ff6b6b; color: #000; }
+    .bit-type-lx         { background: #f4c542; color: #000; }
+    .bit-type-wardrobe   { background: #9b8ec4; color: #000; }
+    .bit-type-transition { background: #8888aa; color: #000; }
+    .bit-speakers {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      padding: 14px 28px; border-bottom: 3px solid var(--dark);
+      flex-shrink: 0;
+    }
+    .bit-speaker-chip {
+      border: 2px solid var(--dark); padding: 6px 18px;
+      font: 400 28px/1 var(--font); color: oklch(0.85 0.01 90);
+    }
+    .bit-cue-center {
+      flex: 1; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; text-align: center; padding: 0 28px;
+    }
+    .bit-cue-action {
+      font: 700 46px/1.4 var(--font); color: #f4c542; letter-spacing: 0.04em;
+    }
   </style>
 </head>
 <body>
@@ -125,19 +153,20 @@
 const PROJECT = "sdwf-setlist";
 const API_KEY = "AIzaSyB4ZCM-WGSgGTZra0tuQ6WbZyMUfbt6BNU";
 const FS = "https://firestore.googleapis.com/v1/projects/" + PROJECT + "/databases/(default)/documents";
-const VER = "v1.4";
+const VER = "v1.5";
 // v1.0 — initial release (USB JSON, GPIO footswitch)
 // v1.1 — ChordPro inline chords, section-by-section navigation
 // v1.2 — Firestore live sync, pulls all shows on boot, localStorage cache
 // v1.3 — Long-press SELECT → main menu from any screen; long-press BACK → top of song
 // v1.4 — Auto-fit font on long sections (no more scroll); auto-update prompter.html on boot
+// v1.5 — Cameron Bits inline in setlist; reads items[] array instead of songIds
 const LONG_MS = 700; // long-press threshold
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const S = {
   screen: "menu",   // menu | shows | setlist | live | options | sync | foot
   menuSel: 0, showSel: 0, songSel: 0, secSel: 0,
-  shows: [], songs: {}, show: null, setlist: [],
+  shows: [], songs: {}, bits: {}, show: null, setlist: [],
   sections: [],     // parsed sections for current song [{label, lines}]
   syncing: false, syncMsg: "", lastSync: null,
 };
@@ -155,6 +184,16 @@ async function fsAll(col) {
   } while (tok);
   return docs;
 }
+function parseMapFields(fields) {
+  const o={};
+  for (const [k,v] of Object.entries(fields||{})) {
+    if      (v.stringValue!==undefined)  o[k]=v.stringValue;
+    else if (v.integerValue!==undefined) o[k]=Number(v.integerValue);
+    else if (v.doubleValue!==undefined)  o[k]=Number(v.doubleValue);
+    else if (v.booleanValue!==undefined) o[k]=v.booleanValue;
+  }
+  return o;
+}
 function parse(doc) {
   const id = doc.name.split("/").pop(), f = doc.fields||{}, o = {id};
   for (const [k,v] of Object.entries(f)) {
@@ -163,26 +202,31 @@ function parse(doc) {
     else if (v.doubleValue!==undefined)  o[k]=Number(v.doubleValue);
     else if (v.booleanValue!==undefined) o[k]=v.booleanValue;
     else if (v.nullValue!==undefined)    o[k]=null;
-    else if (v.arrayValue) o[k]=(v.arrayValue.values||[]).map(x=>
-      x.stringValue!==undefined?x.stringValue:x.integerValue!==undefined?Number(x.integerValue):null);
+    else if (v.arrayValue) o[k]=(v.arrayValue.values||[]).map(x=>{
+      if (x.stringValue!==undefined) return x.stringValue;
+      if (x.integerValue!==undefined) return Number(x.integerValue);
+      if (x.mapValue) return parseMapFields(x.mapValue.fields);
+      return null;
+    });
   }
   return o;
 }
 
 // ── Cache ─────────────────────────────────────────────────────────────────────
-function saveCache(shows,songs){try{localStorage.setItem("sdwf_shows",JSON.stringify(shows));localStorage.setItem("sdwf_songs",JSON.stringify(songs));localStorage.setItem("sdwf_sync",new Date().toISOString());}catch(_){}}
-function loadCache(){try{return{shows:JSON.parse(localStorage.getItem("sdwf_shows")||"null"),songs:JSON.parse(localStorage.getItem("sdwf_songs")||"null"),ts:localStorage.getItem("sdwf_sync")};}catch(_){return{};}}
+function saveCache(shows,songs,bits){try{localStorage.setItem("sdwf_shows",JSON.stringify(shows));localStorage.setItem("sdwf_songs",JSON.stringify(songs));localStorage.setItem("sdwf_bits",JSON.stringify(bits));localStorage.setItem("sdwf_sync",new Date().toISOString());}catch(_){}}
+function loadCache(){try{return{shows:JSON.parse(localStorage.getItem("sdwf_shows")||"null"),songs:JSON.parse(localStorage.getItem("sdwf_songs")||"null"),bits:JSON.parse(localStorage.getItem("sdwf_bits")||"null"),ts:localStorage.getItem("sdwf_sync")};}catch(_){return{};}}
 
 // ── Sync ──────────────────────────────────────────────────────────────────────
 async function doSync() {
   S.syncing=true; S.syncMsg="Connecting to Firestore…"; render();
   try {
-    const [sd,wd] = await Promise.all([fsAll("shows"),fsAll("songs")]);
+    const [sd,wd,bd] = await Promise.all([fsAll("shows"),fsAll("songs"),fsAll("cameronBits")]);
     S.shows = sd.map(parse).sort((a,b)=>(b.date||"").localeCompare(a.date||""));
     S.songs = {}; wd.map(parse).forEach(s=>{S.songs[String(s.id)]=s;});
+    S.bits  = {}; bd.map(parse).forEach(b=>{S.bits[String(b.id)]=b;});
     S.lastSync = new Date();
-    S.syncMsg = "✓ "+S.shows.length+" shows · "+wd.length+" songs loaded";
-    saveCache(S.shows,S.songs);
+    S.syncMsg = "✓ "+S.shows.length+" shows · "+wd.length+" songs · "+bd.length+" bits";
+    saveCache(S.shows,S.songs,S.bits);
   } catch(e) { S.syncMsg="✗ "+e.message+" — using cached data"; }
   S.syncing=false; render();
 }
@@ -245,11 +289,29 @@ function parseSections(chart) {
 }
 
 function buildSetlist() {
-  S.setlist = (S.show&&S.show.songIds||[]).map(id=>S.songs[String(id)]).filter(Boolean);
+  if (!S.show) { S.setlist=[]; return; }
+  const items = S.show.items;
+  if (Array.isArray(items) && items.length) {
+    // New format: items[] with {type, id}
+    S.setlist = items.map(item=>{
+      if (!item||!item.type) return null;
+      if (item.type==="song") {
+        const s=S.songs[String(item.id)]; return s?{...s,_type:"song"}:null;
+      }
+      if (item.type==="cameron") {
+        const b=S.bits[String(item.id)]; return b?{...b,_type:"cameron"}:null;
+      }
+      return null;
+    }).filter(Boolean);
+  } else {
+    // Legacy format: songIds[]
+    S.setlist = (S.show.songIds||[]).map(id=>S.songs[String(id)]).filter(Boolean).map(s=>({...s,_type:"song"}));
+  }
 }
 function buildSections() {
-  const song = S.setlist[S.songSel];
-  S.sections = song ? parseSections(song.chart) : [];
+  const item = S.setlist[S.songSel];
+  if (!item || item._type==="cameron") { S.sections=[]; S.secSel=0; return; }
+  S.sections = parseSections(item.chart);
   S.secSel = 0;
 }
 
@@ -280,8 +342,9 @@ function handleLongPress(k) {
   // Long press SELECT → main menu from anywhere, reset selection to top
   if (sel) { S.screen="menu"; S.menuSel=0; render(); return; }
   if (S.screen === "live") {
-    if (bck) { S.secSel=0; render(); }                                  // top of song
-    if (nxt) { if (S.songSel < S.setlist.length-1){S.songSel++;buildSections();} render(); } // skip song
+    const isBit = S.setlist[S.songSel] && S.setlist[S.songSel]._type==="cameron";
+    if (bck && !isBit) { S.secSel=0; render(); }                         // top of song (no-op for bit)
+    if (nxt) { if (S.songSel < S.setlist.length-1){S.songSel++;buildSections();} render(); } // skip item
   } else if (S.screen === "setlist") {
     if (bck) { S.screen="shows"; render(); }                            // back to shows
   }
@@ -317,12 +380,18 @@ function handleShortPress(k) {
     else if (ok) { buildSections(); S.screen="live"; render(); }
     else if (bk) { S.screen="shows"; render(); }
   } else if (sc==="live") {
+    const curItem = S.setlist[S.songSel];
+    const isBit = curItem && curItem._type==="cameron";
     if (dn) {
-      if (S.secSel < S.sections.length-1) { S.secSel++; render(); }
+      if (!isBit && S.secSel < S.sections.length-1) { S.secSel++; render(); }
       else if (S.songSel < S.setlist.length-1) { S.songSel++; buildSections(); render(); }
     } else if (up) {
-      if (S.secSel > 0) { S.secSel--; render(); }
-      else if (S.songSel > 0) { S.songSel--; buildSections(); S.secSel=S.sections.length-1; render(); }
+      if (!isBit && S.secSel > 0) { S.secSel--; render(); }
+      else if (S.songSel > 0) {
+        S.songSel--; buildSections();
+        S.secSel = S.sections.length>0 ? S.sections.length-1 : 0;
+        render();
+      }
     } else if (ok || bk) { S.screen="setlist"; render(); }
   } else if (sc==="options") {
     if (dn) { S.songSel=(S.songSel+1)%S.setlist.length; render(); }
@@ -386,24 +455,95 @@ function renderShows() {
   app.appendChild(ft("BACK","LOAD","NEXT"));
 }
 
+const BIT_TYPE_SHORT = {narration:"NARR",emcee:"EMCEE",lx:"LX",wardrobe:"WARD",transition:"TRANS"};
 function renderSetlist() {
   const app=document.getElementById("app");
-  app.appendChild(hd((S.show&&S.show.name||"SET LIST").toUpperCase(),S.setlist.length+" SONGS"));
+  app.appendChild(hd((S.show&&S.show.name||"SET LIST").toUpperCase(),S.setlist.length+" ITEMS"));
   const sc=el("div","scroll");
-  S.setlist.forEach((song,i)=>{
+  S.setlist.forEach((item,i)=>{
     const r=el("div","row "+(i===S.songSel?"sel":"dim"));
-    r.appendChild(el("span","n",(i+1)+")"));r.appendChild(el("span","lbl",song.title));
-    if (song.key) r.appendChild(el("span","r",song.key));
+    r.appendChild(el("span","n",(i+1)+")"));
+    r.appendChild(el("span","lbl",item.title||"Untitled"));
+    if (item._type==="cameron") {
+      r.appendChild(el("span","r","["+( BIT_TYPE_SHORT[item.type]||item.type||"BIT")+"]"));
+    } else if (item.key) {
+      r.appendChild(el("span","r",item.key));
+    }
     sc.appendChild(r);
   });
   app.appendChild(sc);
   app.appendChild(ft("BACK","LOAD","NEXT"));
 }
 
+function renderCameronBit(bit) {
+  const app=document.getElementById("app");
+  const pos=S.songSel+1, total=S.setlist.length;
+  const nextItem=S.setlist[S.songSel+1];
+  const nextLabel=nextItem?(nextItem.title||"").toUpperCase():null;
+
+  // Header — dark so the type banner color pops
+  const bh=el("div","hd bit-hd",bit.title.toUpperCase());
+  bh.appendChild(el("span","hd-r",pos+" / "+total));
+  app.appendChild(bh);
+
+  // Type banner
+  const TYPE_LABELS={narration:"NARRATION",emcee:"EMCEE",lx:"LX / CUE",wardrobe:"WARDROBE",transition:"TRANSITION"};
+  const TYPE_CSS={narration:"bit-type-narration",emcee:"bit-type-emcee",lx:"bit-type-lx",wardrobe:"bit-type-wardrobe",transition:"bit-type-transition"};
+  const typeLabel=TYPE_LABELS[bit.type]||(bit.type||"BIT").toUpperCase();
+  const typeCls=TYPE_CSS[bit.type]||"bit-type-narration";
+  const tb=el("div","bit-type-banner "+typeCls,typeLabel+(bit.duration?"  ·  "+bit.duration+" min":""));
+  app.appendChild(tb);
+
+  // Speakers
+  const speakers=Array.isArray(bit.speakers)?bit.speakers:[];
+  if (speakers.length) {
+    const sp=el("div","bit-speakers");
+    speakers.forEach(s=>sp.appendChild(el("span","bit-speaker-chip",s)));
+    app.appendChild(sp);
+  }
+
+  // Body
+  const body=el("div","live-body");
+
+  if (bit.type==="lx") {
+    const center=el("div","bit-cue-center");
+    center.appendChild(el("div","bit-cue-action",bit.content||bit.title));
+    body.appendChild(center);
+  } else {
+    const linesDiv=el("div","lines");
+    const paras=(bit.content||"").split(/\n\n+/).filter(p=>p.trim());
+    (paras.length?paras:[bit.content||""]).forEach(para=>{
+      const p=el("div","");
+      p.style.cssText="font:400 var(--lyric,34px)/1.6 var(--font);margin-bottom:20px;overflow-wrap:break-word;";
+      p.textContent=para.trim();
+      linesDiv.appendChild(p);
+    });
+    // Auto-fit: shrink until content fits
+    requestAnimationFrame(()=>{
+      let lyric=34; const MIN=18;
+      while(lyric>MIN&&linesDiv.scrollHeight>linesDiv.clientHeight){
+        lyric-=2; linesDiv.style.setProperty("--lyric",lyric+"px");
+      }
+    });
+    body.appendChild(linesDiv);
+  }
+
+  if (nextLabel) {
+    const np=el("div","next-preview");
+    np.appendChild(el("div","next-banner","NEXT: "+nextLabel));
+    body.appendChild(np);
+  }
+
+  app.appendChild(body);
+  app.appendChild(ft("BACK","SELECT","NEXT"));
+}
+
 function renderLive() {
   const app=document.getElementById("app");
   const song=S.setlist[S.songSel];
-  if (!song||!S.sections.length){S.screen="setlist";renderSetlist();return;}
+  if (!song){S.screen="setlist";renderSetlist();return;}
+  if (song._type==="cameron"){renderCameronBit(song);return;}
+  if (!S.sections.length){S.screen="setlist";renderSetlist();return;}
   const sec=S.sections[S.secSel];
   const next=S.sections[S.secSel+1]||(S.songSel<S.setlist.length-1?{label:"NEXT SONG: "+(S.setlist[S.songSel+1]||{}).title,lines:[]}:null);
 
@@ -544,7 +684,7 @@ function render() {
 // ── Boot ──────────────────────────────────────────────────────────────────────
 (async function boot() {
   const c=loadCache();
-  if (c.shows&&c.songs){S.shows=c.shows;S.songs=c.songs;S.lastSync=c.ts?new Date(c.ts):null;}
+  if (c.shows&&c.songs){S.shows=c.shows;S.songs=c.songs;S.bits=c.bits||{};S.lastSync=c.ts?new Date(c.ts):null;}
   render();
   try { await doSync(); } catch(_) {}
   if (S.screen==="menu"||S.screen==="sync") render();

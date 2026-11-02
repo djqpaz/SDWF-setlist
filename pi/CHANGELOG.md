@@ -1,5 +1,21 @@
 # Pi Prompter Changelog
 
+## v1.5 — 2026-11-02
+
+### Cameron Bits inline in the setlist
+The prompter now reads the show's `items[]` array instead of `songIds[]`, so
+Cameron Bits appear in the correct position between songs. Each bit gets its own
+screen showing the type banner (color-coded: Narration = teal, Emcee = coral,
+LX = amber, Wardrobe = purple, Transition = grey), speaker chips, duration, and
+the full script text. The auto-fit font logic applies to long scripts just as it
+does to long verses. Navigation (NEXT/BACK) flows through bits and songs in
+order. Older shows that still use `songIds[]` continue to work unchanged.
+
+Also fetches the `cameronBits` Firestore collection at sync time and caches it
+in `localStorage` alongside shows and songs.
+
+---
+
 ## v1.4 — 2026-11-02
 
 ### Auto-fit font on long sections
