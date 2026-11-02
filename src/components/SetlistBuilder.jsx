@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor,
   useSensor, useSensors,
@@ -244,7 +245,7 @@ export default function SetlistBuilder({ items = [], onChange, showId, baseUrl, 
 
   return (
     <>
-    {openedBit && (
+    {openedBit && createPortal(
       <div style={{
         position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)",
         display: "flex", alignItems: "flex-end", justifyContent: "center",
@@ -280,7 +281,7 @@ export default function SetlistBuilder({ items = [], onChange, showId, baseUrl, 
           </div>
         </div>
       </div>
-    )}
+    , document.body)}
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={itemKeys} strategy={verticalListSortingStrategy}>
         <div style={{ padding: "8px 12px 16px" }}>

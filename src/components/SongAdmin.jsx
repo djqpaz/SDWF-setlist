@@ -111,7 +111,7 @@ function SongForm({ initial, onSave, onCancel, saving }) {
   );
 }
 
-export default function SongAdmin({ onClose, onToast, initialSongId, activeShowId, shows }) {
+export default function SongAdmin({ onClose, onToast, initialSongId, activeShowId, shows, closeOnChartDone }) {
   const { songs } = useSongs();
   const [activeTab, setActiveTab] = useState("songs");
   const [search, setSearch] = useState("");
@@ -362,7 +362,7 @@ export default function SongAdmin({ onClose, onToast, initialSongId, activeShowI
         <ChartEditor
           song={chartFor}
           onSave={(chart) => handleSaveChart(chartFor, chart)}
-          onCancel={() => setChartFor(null)}
+          onCancel={() => { setChartFor(null); if (closeOnChartDone) onClose(); }}
         />
       )}
 

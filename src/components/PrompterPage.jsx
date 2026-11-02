@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { collection, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -44,10 +44,10 @@ function SectionContent({ lines }) {
       <div key={idx} style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", marginBottom: 2, opacity: chordOnly ? 0.65 : 1 }}>
         {segs.map((s, i) => (
           <span key={i} style={{ display: "inline-flex", flexDirection: "column" }}>
-            <span style={{ color: "#ff6b6b", fontWeight: "bold", height: "1.4em", whiteSpace: "pre-wrap", paddingRight: "0.5em", fontSize: "clamp(15px,2.8vw,20px)" }}>
+            <span style={{ color: "#ff6b6b", fontWeight: "bold", height: "1.4em", whiteSpace: "pre-wrap", paddingRight: "0.5em", fontSize: "var(--chord-size, clamp(15px,2.8vw,20px))" }}>
               {s.c || " "}
             </span>
-            <span style={{ whiteSpace: "pre-wrap", fontSize: "clamp(22px,4vw,30px)", lineHeight: 1.35 }}>
+            <span style={{ whiteSpace: "pre-wrap", fontSize: "var(--lyric-size, clamp(22px,4vw,30px))", lineHeight: 1.35 }}>
               {s.t || (s.c ? " " : "")}
             </span>
           </span>
@@ -112,6 +112,7 @@ export default function PrompterPage({ showId }) {
   const isWide = useIsWide();
   const touchStartX = useRef(null);
   const contentRef  = useRef(null);
+  const sectionWrapRef = useRef(null);
 
   // Auto-open sidebar on wide screens, close overlay on narrow
   useEffect(() => {
@@ -184,6 +185,23 @@ export default function PrompterPage({ showId }) {
   useEffect(() => { setSecIdx(0); }, [entryIdx]);
   useEffect(() => { if (sections.length && secIdx >= sections.length) setSecIdx(sections.length - 1); }, [sections.length]);
   useEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [entryIdx, secIdx]);
+
+  // Auto-fit: binary-search lyric font size to fill the content area without overflow
+  useLayoutEffect(() => {
+    const container = contentRef.current;
+    const wrap = sectionWrapRef.current;
+    if (!container || !wrap || !isSongEntry) return;
+    const avail = container.clientHeight - 16; // 8px breathing room top+bottom
+    let lo = 12, hi = 36, best = 12;
+    for (let n = 0; n < 9; n++) {
+      const mid = (lo + hi) / 2;
+      wrap.style.setProperty("--lyric-size", mid + "px");
+      wrap.style.setProperty("--chord-size", (mid * 0.6) + "px");
+      if (wrap.scrollHeight <= avail) { best = mid; lo = mid; } else hi = mid;
+    }
+    wrap.style.setProperty("--lyric-size", best + "px");
+    wrap.style.setProperty("--chord-size", (best * 0.6) + "px");
+  });
 
   const isFirst = entryIdx === 0 && secIdx === 0;
   const isLast  = entryIdx === entries.length - 1 && (isSongEntry ? secIdx >= Math.max(0, sections.length - 1) : true);
@@ -375,7 +393,7 @@ export default function PrompterPage({ showId }) {
           {/* Chart content / Cameron Bit content */}
           <div
             ref={contentRef}
-            style={{ flex:1, overflowY:"auto", padding: isSongEntry ? "18px 22px 10px" : 0, WebkitOverflowScrolling:"touch" }}
+            style={{ flex:1, overflow: isSongEntry ? "hidden" : "auto", padding: isSongEntry ? "8px 22px" : 0, WebkitOverflowScrolling:"touch" }}
             onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
             onTouchEnd={e => {
               if (touchStartX.current == null) return;
@@ -386,7 +404,9 @@ export default function PrompterPage({ showId }) {
           >
             {isSongEntry ? (
               curSection ? (
-                <SectionContent lines={curSection.lines} />
+                <div ref={sectionWrapRef}>
+                  <SectionContent lines={curSection.lines} />
+                </div>
               ) : (
                 <div style={{ color:"#444460", fontStyle:"italic", fontSize:18, marginTop:24 }}>No chart for this song.</div>
               )

@@ -559,7 +559,7 @@ export default function App() {
             onClose={() => setShowGenerate(false)}
           />
         )}
-        {showAdmin && <SongAdmin onClose={() => { setShowAdmin(false); if (returnTo) window.location.href = returnTo; }} onToast={showToast} initialSongId={editSongId} activeShowId={activeShow?.id} shows={shows} />}
+        {showAdmin && <SongAdmin onClose={() => { setShowAdmin(false); if (returnTo) window.location.href = returnTo; }} onToast={showToast} initialSongId={editSongId} activeShowId={activeShow?.id} shows={shows} closeOnChartDone={!!returnTo} />}
         {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
         {confirmDialog && (
           <ConfirmDialog
@@ -802,7 +802,7 @@ export default function App() {
       {showGenerate && (
         <GenerateModal currentSongIds={showSongIds} onGenerate={setSongIds} onDuplicate={duplicateShowWithSongs} onClose={() => setShowGenerate(false)} />
       )}
-      {showAdmin && <SongAdmin onClose={() => { setShowAdmin(false); if (returnTo) window.location.href = returnTo; }} onToast={showToast} initialSongId={editSongId} activeShowId={activeShow?.id} shows={shows} />}
+      {showAdmin && <SongAdmin onClose={() => { setShowAdmin(false); if (returnTo) window.location.href = returnTo; }} onToast={showToast} initialSongId={editSongId} activeShowId={activeShow?.id} shows={shows} closeOnChartDone={!!returnTo} />}
       {toast && <Toast message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
       {confirmDialog && (
         <ConfirmDialog
