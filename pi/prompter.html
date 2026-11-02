@@ -51,6 +51,9 @@
     .row.dim { color: oklch(0.82 0.01 90); }
     .row.sel { background: var(--gold); color: #000; }
     .row.sel .r { color: #444; }
+    .row.bit-dim { color: oklch(0.7 0.1 165); }
+    .row.bit-sel { background: var(--green); color: #000; }
+    .row.bit-sel .r { color: #333; }
     .hint { padding: 12px 32px; font: 400 28px/1.4 var(--font); color: var(--dim); }
 
     /* ── live meta strip ─────────────────────────────────────────────────── */
@@ -460,11 +463,15 @@ function renderSetlist() {
   const app=document.getElementById("app");
   app.appendChild(hd((S.show&&S.show.name||"SET LIST").toUpperCase(),S.setlist.length+" ITEMS"));
   const sc=el("div","scroll");
+  let songNum=0, bitNum=0;
   S.setlist.forEach((item,i)=>{
-    const r=el("div","row "+(i===S.songSel?"sel":"dim"));
-    r.appendChild(el("span","n",(i+1)+")"));
+    const isBit=item._type==="cameron";
+    const label=isBit?String.fromCharCode(65+bitNum++):String(++songNum);
+    const rowCls=i===S.songSel?(isBit?"row bit-sel":"row sel"):(isBit?"row bit-dim":"row dim");
+    const r=el("div",rowCls);
+    r.appendChild(el("span","n",label+")"));
     r.appendChild(el("span","lbl",item.title||"Untitled"));
-    if (item._type==="cameron") {
+    if (isBit) {
       r.appendChild(el("span","r","["+( BIT_TYPE_SHORT[item.type]||item.type||"BIT")+"]"));
     } else if (item.key) {
       r.appendChild(el("span","r",item.key));
