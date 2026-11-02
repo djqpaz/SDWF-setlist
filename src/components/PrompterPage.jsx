@@ -58,7 +58,7 @@ function SectionContent({ lines }) {
 }
 
 // Cameron Bit full-screen view
-function BitContent({ bit }) {
+function BitContent({ bit, wrapRef }) {
   const typeColors = {
     "Narration":  "#4ecdc4",
     "Emcee":      "#ff6b6b",
@@ -69,7 +69,7 @@ function BitContent({ bit }) {
   const accentColor = typeColors[bit.type] || "#4ecdc4";
 
   return (
-    <div style={{ padding: "24px 28px", height: "100%", overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
+    <div ref={wrapRef} style={{ padding: "24px 28px" }}>
       <div style={{
         display: "inline-block", marginBottom: 16,
         background: "#0a1a1a", border: `1px solid ${accentColor}`,
@@ -80,7 +80,7 @@ function BitContent({ bit }) {
         {bit.duration ? ` · ${bit.duration} min` : ""}
       </div>
       {bit.content ? (
-        <div style={{ fontSize: "clamp(20px,3.5vw,28px)", lineHeight: 1.6, color: "#e8e8f0", whiteSpace: "pre-wrap", fontFamily: "inherit" }}>
+        <div style={{ fontSize: "var(--bit-size, 22px)", lineHeight: 1.6, color: "#e8e8f0", whiteSpace: "pre-wrap", fontFamily: "inherit" }}>
           {bit.content}
         </div>
       ) : (
@@ -113,6 +113,7 @@ export default function PrompterPage({ showId }) {
   const touchStartX = useRef(null);
   const contentRef  = useRef(null);
   const sectionWrapRef = useRef(null);
+  const bitWrapRef = useRef(null);
 
   // Auto-open sidebar on wide screens, close overlay on narrow
   useEffect(() => {
@@ -186,21 +187,35 @@ export default function PrompterPage({ showId }) {
   useEffect(() => { if (sections.length && secIdx >= sections.length) setSecIdx(sections.length - 1); }, [sections.length]);
   useEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [entryIdx, secIdx]);
 
-  // Auto-fit: binary-search lyric font size to fill the content area without overflow
+  // Auto-fit: binary-search font size to fill the content area without overflow
   useLayoutEffect(() => {
     const container = contentRef.current;
-    const wrap = sectionWrapRef.current;
-    if (!container || !wrap || !isSongEntry) return;
-    const avail = container.clientHeight - 16; // 8px breathing room top+bottom
-    let lo = 12, hi = 36, best = 12;
-    for (let n = 0; n < 9; n++) {
-      const mid = (lo + hi) / 2;
-      wrap.style.setProperty("--lyric-size", mid + "px");
-      wrap.style.setProperty("--chord-size", (mid * 0.6) + "px");
-      if (wrap.scrollHeight <= avail) { best = mid; lo = mid; } else hi = mid;
+    if (!container) return;
+    const avail = container.clientHeight - 16;
+
+    if (isSongEntry) {
+      const wrap = sectionWrapRef.current;
+      if (!wrap) return;
+      let lo = 12, hi = 36, best = 12;
+      for (let n = 0; n < 9; n++) {
+        const mid = (lo + hi) / 2;
+        wrap.style.setProperty("--lyric-size", mid + "px");
+        wrap.style.setProperty("--chord-size", (mid * 0.6) + "px");
+        if (wrap.scrollHeight <= avail) { best = mid; lo = mid; } else hi = mid;
+      }
+      wrap.style.setProperty("--lyric-size", best + "px");
+      wrap.style.setProperty("--chord-size", (best * 0.6) + "px");
+    } else {
+      const wrap = bitWrapRef.current;
+      if (!wrap) return;
+      let lo = 12, hi = 28, best = 12;
+      for (let n = 0; n < 9; n++) {
+        const mid = (lo + hi) / 2;
+        wrap.style.setProperty("--bit-size", mid + "px");
+        if (wrap.scrollHeight <= avail) { best = mid; lo = mid; } else hi = mid;
+      }
+      wrap.style.setProperty("--bit-size", best + "px");
     }
-    wrap.style.setProperty("--lyric-size", best + "px");
-    wrap.style.setProperty("--chord-size", (best * 0.6) + "px");
   });
 
   const isFirst = entryIdx === 0 && secIdx === 0;
@@ -393,7 +408,7 @@ export default function PrompterPage({ showId }) {
           {/* Chart content / Cameron Bit content */}
           <div
             ref={contentRef}
-            style={{ flex:1, overflow: isSongEntry ? "hidden" : "auto", padding: isSongEntry ? "8px 22px" : 0, WebkitOverflowScrolling:"touch" }}
+            style={{ flex:1, overflow:"hidden", padding: isSongEntry ? "8px 22px" : 0, WebkitOverflowScrolling:"touch" }}
             onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
             onTouchEnd={e => {
               if (touchStartX.current == null) return;
@@ -411,7 +426,7 @@ export default function PrompterPage({ showId }) {
                 <div style={{ color:"#444460", fontStyle:"italic", fontSize:18, marginTop:24 }}>No chart for this song.</div>
               )
             ) : (
-              <BitContent bit={bit} />
+              <BitContent bit={bit} wrapRef={bitWrapRef} />
             )}
           </div>
 
