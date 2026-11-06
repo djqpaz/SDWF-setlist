@@ -13,6 +13,7 @@ import { colors } from "../theme";
 import { VIBE_COLORS } from "../data/songs";
 import { useSongs } from "../context/SongsContext";
 import { useCameronBits } from "../context/CameronBitsContext";
+import { useSpeakerColors } from "../context/SpeakerColorsContext";
 
 const BIT_TYPE_COLORS = {
   "Narration":  "#4ecdc4",
@@ -29,6 +30,7 @@ function fmtDuration(secs) {
 
 function SortableItem({ itemKey, id, index, onRemove, songMap, bitMap, type, sameKeyAsPrev, pendingRemove, onPendingRemove, chartUrl, locked, onOpenBit }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: itemKey });
+  const { speakerColors } = useSpeakerColors();
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -41,6 +43,7 @@ function SortableItem({ itemKey, id, index, onRemove, songMap, bitMap, type, sam
     const bit = bitMap[id];
     if (!bit) return null;
     const dotColor = BIT_TYPE_COLORS[bit.type] || colors.textDim;
+    const bitSpeakers = bit.speaker && bit.speaker !== "—" ? bit.speaker.split(", ").filter(Boolean) : [];
     return (
       <div ref={setNodeRef} style={style}>
         <div style={{
@@ -60,9 +63,17 @@ function SortableItem({ itemKey, id, index, onRemove, songMap, bitMap, type, sam
               <div style={{ fontSize: 13, color: colors.teal, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontStyle: "italic" }}>
                 {bit.title}{bit.content ? " ▾" : ""}
               </div>
-              <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
-                {bit.type}{bit.speaker && bit.speaker !== "—" ? ` · ${bit.speaker}` : ""}
-                {bit.duration ? ` · ${bit.duration} min` : ""}
+              <div style={{ display: "flex", alignItems: "center", gap: 3, marginTop: 1, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 10, color: colors.textMuted }}>{bit.type}{bit.duration ? ` · ${bit.duration} min` : ""}</span>
+                {bitSpeakers.map(s => (
+                  <span key={s} style={{
+                    fontSize: 9, padding: "0 5px", borderRadius: 99,
+                    background: (speakerColors[s] || "#8888aa") + "28",
+                    border: `1px solid ${(speakerColors[s] || "#8888aa") + "55"}`,
+                    color: speakerColors[s] || "#8888aa",
+                    fontWeight: "bold",
+                  }}>{s}</span>
+                ))}
               </div>
             </div>
             <span style={{
@@ -199,6 +210,7 @@ export function calcTotalDuration(songIds, songMap) {
 export default function SetlistBuilder({ items = [], onChange, showId, baseUrl, locked }) {
   const { songs } = useSongs();
   const { bits } = useCameronBits();
+  const { speakerColors } = useSpeakerColors();
   const songMap = Object.fromEntries(songs.map(s => [s.id, s]));
   const bitMap = Object.fromEntries(bits.map(b => [b.id, b]));
   const [pendingRemoveKey, setPendingRemoveKey] = useState(null);
@@ -261,9 +273,17 @@ export default function SetlistBuilder({ items = [], onChange, showId, baseUrl, 
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, color: colors.teal, fontStyle: "italic", fontWeight: "bold" }}>{openedBit.title}</div>
-                <div style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>
-                  {openedBit.type}{openedBit.speaker && openedBit.speaker !== "—" ? ` · ${openedBit.speaker}` : ""}
-                  {openedBit.duration ? ` · ${openedBit.duration} min` : ""}
+                <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 11, color: colors.textMuted }}>{openedBit.type}{openedBit.duration ? ` · ${openedBit.duration} min` : ""}</span>
+                  {openedBit.speaker && openedBit.speaker !== "—" && openedBit.speaker.split(", ").filter(Boolean).map(s => (
+                    <span key={s} style={{
+                      fontSize: 10, padding: "1px 7px", borderRadius: 99,
+                      background: (speakerColors[s] || "#8888aa") + "28",
+                      border: `1px solid ${(speakerColors[s] || "#8888aa") + "60"}`,
+                      color: speakerColors[s] || "#8888aa",
+                      fontWeight: "bold",
+                    }}>{s}</span>
+                  ))}
                 </div>
               </div>
               <button onClick={() => setOpenedBit(null)} style={{

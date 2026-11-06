@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import { SongsProvider } from "./context/SongsContext.jsx";
 import { CameronBitsProvider } from "./context/CameronBitsContext.jsx";
+import { SpeakerColorsProvider } from "./context/SpeakerColorsContext.jsx";
 import VotePage from "./components/VotePage.jsx";
 import SetlistPage from "./components/SetlistPage.jsx";
 import ChartsPage from "./components/ChartsPage.jsx";
@@ -37,20 +38,22 @@ const prompterId = params.get("prompter");
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    {voteId ? (
-      <VotePage showId={voteId} />
-    ) : setlistId ? (
-      <SetlistPage showId={setlistId} />
-    ) : chartsId ? (
-      <ChartsPage showId={chartsId} songId={chartSongId} />
-    ) : prompterId ? (
-      <PrompterPage showId={prompterId} />
-    ) : (
-      <SongsProvider>
-        <CameronBitsProvider>
-          <App />
-        </CameronBitsProvider>
-      </SongsProvider>
-    )}
+    <SpeakerColorsProvider>
+      {voteId ? (
+        <VotePage showId={voteId} />
+      ) : setlistId ? (
+        <SetlistPage showId={setlistId} />
+      ) : chartsId ? (
+        <ChartsPage showId={chartsId} songId={chartSongId} />
+      ) : prompterId ? (
+        <PrompterPage showId={prompterId} />
+      ) : (
+        <SongsProvider>
+          <CameronBitsProvider>
+            <App />
+          </CameronBitsProvider>
+        </SongsProvider>
+      )}
+    </SpeakerColorsProvider>
   </React.StrictMode>
 );

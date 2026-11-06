@@ -3,6 +3,7 @@ import { collection, doc, setDoc, updateDoc, deleteDoc } from "firebase/firestor
 import { db } from "../firebase";
 import { colors } from "../theme";
 import { useCameronBits } from "../context/CameronBitsContext";
+import { useSpeakerColors } from "../context/SpeakerColorsContext";
 
 const BIT_TYPES = ["Narration", "Emcee", "LX / cue", "Wardrobe", "Transition"];
 const SPEAKERS = ["Brett", "Spencer", "Kenny", "John", "Chris", "Matt", "Dave", "All", "—"];
@@ -46,6 +47,7 @@ function Field({ label, value, onChange, type = "text", options, rows }) {
 }
 
 function SpeakerPicker({ value, onChange }) {
+  const { speakerColors } = useSpeakerColors();
   const people = SPEAKERS.filter(s => s !== "—");
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -55,6 +57,7 @@ function SpeakerPicker({ value, onChange }) {
       <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
         {people.map(name => {
           const on = value.includes(name);
+          const c = speakerColors[name] || "#8888aa";
           return (
             <button
               key={name}
@@ -63,9 +66,10 @@ function SpeakerPicker({ value, onChange }) {
               style={{
                 padding: "3px 10px", borderRadius: 99, fontSize: 11, cursor: "pointer",
                 fontFamily: "inherit",
-                background: on ? colors.teal : "transparent",
-                color: on ? colors.onAccent : colors.textSecondary,
-                border: `1px solid ${on ? colors.teal : colors.borderMed}`,
+                background: on ? c : "transparent",
+                color: on ? "#000" : c,
+                border: `1px solid ${on ? c : c + "60"}`,
+                fontWeight: on ? "bold" : "normal",
               }}
             >{name}</button>
           );
@@ -137,7 +141,9 @@ function BitForm({ initial, onSave, onCancel, saving, shows = [] }) {
 
 export default function CameronBitManager({ onToast, activeShowId, shows = [] }) {
   const { bits } = useCameronBits();
+  const { speakerColors, updateColor, resetColors } = useSpeakerColors();
   const [expandedId, setExpandedId] = useState(null);
+  const [showColorEditor, setShowColorEditor] = useState(false);
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [filterType, setFilterType] = useState("All");
@@ -240,9 +246,17 @@ export default function CameronBitManager({ onToast, activeShowId, shows = [] })
                   <div style={{ fontSize: 14, color: colors.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {bit.title}
                   </div>
-                  <div style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
-                    {bit.type}{bit.speaker && bit.speaker !== "—" ? ` · ${bit.speaker}` : ""}
-                    {bit.duration ? ` · ${bit.duration} min` : ""}
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 11, color: colors.textSecondary }}>{bit.type}{bit.duration ? ` · ${bit.duration} min` : ""}</span>
+                    {bit.speaker && bit.speaker !== "—" && bit.speaker.split(", ").filter(Boolean).map(s => (
+                      <span key={s} style={{
+                        fontSize: 10, padding: "1px 7px", borderRadius: 99,
+                        background: (speakerColors[s] || "#8888aa") + "28",
+                        border: `1px solid ${(speakerColors[s] || "#8888aa") + "60"}`,
+                        color: speakerColors[s] || "#8888aa",
+                        fontWeight: "bold",
+                      }}>{s}</span>
+                    ))}
                   </div>
                   {bit.content && (
                     <div style={{ fontSize: 11, color: colors.textNote, marginTop: 2, fontStyle: "italic", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -268,6 +282,51 @@ export default function CameronBitManager({ onToast, activeShowId, shows = [] })
           </div>
         );
       })}
+
+      {/* Speaker color editor */}
+      <div style={{ marginTop: 24, borderTop: `1px solid ${colors.borderMed}`, paddingTop: 14 }}>
+        <button onClick={() => setShowColorEditor(v => !v)} style={{
+          background: "none", border: "none", color: colors.textMuted,
+          fontSize: 11, cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.08em",
+          display: "flex", alignItems: "center", gap: 6,
+        }}>
+          <span style={{ fontSize: 14 }}>{showColorEditor ? "▾" : "▸"}</span>
+          SPEAKER COLORS
+        </button>
+        {showColorEditor && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 8 }}>
+              {Object.entries(speakerColors).map(([name, color]) => (
+                <div key={name} style={{ position: "relative" }}>
+                  <div
+                    onClick={() => document.getElementById(`sc-${name}`).click()}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 7, padding: "6px 10px",
+                      borderRadius: 4, border: `1px solid ${color}50`, background: `${color}18`,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ width: 12, height: 12, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color, fontWeight: "bold" }}>{name}</span>
+                  </div>
+                  <input
+                    id={`sc-${name}`}
+                    type="color"
+                    value={color}
+                    onChange={e => updateColor(name, e.target.value)}
+                    style={{ position: "absolute", opacity: 0, pointerEvents: "none", top: 0, left: 0, width: 1, height: 1 }}
+                  />
+                </div>
+              ))}
+            </div>
+            <button onClick={resetColors} style={{
+              marginTop: 10, background: "none", border: `1px solid ${colors.borderMed}`,
+              color: colors.textMuted, fontSize: 10, padding: "3px 10px", borderRadius: 3,
+              cursor: "pointer", fontFamily: "inherit",
+            }}>Reset to defaults</button>
+          </div>
+        )}
+      </div>
 
       {/* Delete confirm overlay */}
       {confirmDelete && (

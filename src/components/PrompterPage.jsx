@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { collection, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
+import { useSpeakerColors } from "../context/SpeakerColorsContext";
 
 const CH = /^[A-G][#b]?(maj|min|m|dim|aug|sus|add|M)?\d*(sus\d|add\d|[#b]\d+)*(\/[A-G][#b]?)?$/;
 
@@ -59,6 +60,7 @@ function SectionContent({ lines }) {
 
 // Cameron Bit full-screen view
 function BitContent({ bit, wrapRef }) {
+  const { speakerColors } = useSpeakerColors();
   const typeColors = {
     "Narration":  "#4ecdc4",
     "Emcee":      "#ff6b6b",
@@ -67,17 +69,27 @@ function BitContent({ bit, wrapRef }) {
     "Transition": "#666688",
   };
   const accentColor = typeColors[bit.type] || "#4ecdc4";
+  const bitSpeakers = bit.speaker && bit.speaker !== "—" ? bit.speaker.split(", ").filter(Boolean) : [];
 
   return (
     <div ref={wrapRef} style={{ padding: "24px 28px" }}>
-      <div style={{
-        display: "inline-block", marginBottom: 16,
-        background: "#0a1a1a", border: `1px solid ${accentColor}`,
-        borderRadius: 4, padding: "3px 14px",
-        fontSize: 11, color: accentColor, letterSpacing: "0.15em", fontWeight: "bold",
-      }}>
-        {bit.type.toUpperCase()}{bit.speaker && bit.speaker !== "—" ? ` — ${bit.speaker}` : ""}
-        {bit.duration ? ` · ${bit.duration} min` : ""}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+        <div style={{
+          background: "#0a1a1a", border: `1px solid ${accentColor}`,
+          borderRadius: 4, padding: "3px 14px",
+          fontSize: 11, color: accentColor, letterSpacing: "0.15em", fontWeight: "bold",
+        }}>
+          {bit.type.toUpperCase()}{bit.duration ? ` · ${bit.duration} min` : ""}
+        </div>
+        {bitSpeakers.map(s => (
+          <span key={s} style={{
+            fontSize: 11, padding: "2px 10px", borderRadius: 99,
+            background: (speakerColors[s] || "#8888aa") + "28",
+            border: `1px solid ${(speakerColors[s] || "#8888aa") + "80"}`,
+            color: speakerColors[s] || "#8888aa",
+            fontWeight: "bold", letterSpacing: "0.05em",
+          }}>{s}</span>
+        ))}
       </div>
       {bit.content ? (
         <div style={{ fontSize: "var(--bit-size, 22px)", lineHeight: 1.6, color: "#e8e8f0", whiteSpace: "pre-wrap", fontFamily: "inherit" }}>

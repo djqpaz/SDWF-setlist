@@ -156,20 +156,21 @@
 const PROJECT = "sdwf-setlist";
 const API_KEY = "AIzaSyB4ZCM-WGSgGTZra0tuQ6WbZyMUfbt6BNU";
 const FS = "https://firestore.googleapis.com/v1/projects/" + PROJECT + "/databases/(default)/documents";
-const VER = "v1.5";
+const VER = "v1.6";
 // v1.0 — initial release (USB JSON, GPIO footswitch)
 // v1.1 — ChordPro inline chords, section-by-section navigation
 // v1.2 — Firestore live sync, pulls all shows on boot, localStorage cache
 // v1.3 — Long-press SELECT → main menu from any screen; long-press BACK → top of song
 // v1.4 — Auto-fit font on long sections (no more scroll); auto-update prompter.html on boot
 // v1.5 — Cameron Bits inline in setlist; reads items[] array instead of songIds
+// v1.6 — Speaker color chips fetched from Firestore config/speakerColors
 const LONG_MS = 700; // long-press threshold
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const S = {
   screen: "menu",   // menu | shows | setlist | live | options | sync | foot
   menuSel: 0, showSel: 0, songSel: 0, secSel: 0,
-  shows: [], songs: {}, bits: {}, show: null, setlist: [],
+  shows: [], songs: {}, bits: {}, speakerColors: {}, show: null, setlist: [],
   sections: [],     // parsed sections for current song [{label, lines}]
   syncing: false, syncMsg: "", lastSync: null,
 };
@@ -186,6 +187,11 @@ async function fsAll(col) {
     tok = d.nextPageToken || null;
   } while (tok);
   return docs;
+}
+async function fsGet(col, docId) {
+  const r = await fetch(FS+"/"+col+"/"+docId+"?key="+API_KEY);
+  if (!r.ok) return null;
+  return await r.json();
 }
 function parseMapFields(fields) {
   const o={};
@@ -223,10 +229,11 @@ function loadCache(){try{return{shows:JSON.parse(localStorage.getItem("sdwf_show
 async function doSync() {
   S.syncing=true; S.syncMsg="Connecting to Firestore…"; render();
   try {
-    const [sd,wd,bd] = await Promise.all([fsAll("shows"),fsAll("songs"),fsAll("cameronBits")]);
+    const [sd,wd,bd,cd] = await Promise.all([fsAll("shows"),fsAll("songs"),fsAll("cameronBits"),fsGet("config","speakerColors")]);
     S.shows = sd.map(parse).sort((a,b)=>(b.date||"").localeCompare(a.date||""));
     S.songs = {}; wd.map(parse).forEach(s=>{S.songs[String(s.id)]=s;});
     S.bits  = {}; bd.map(parse).forEach(b=>{S.bits[String(b.id)]=b;});
+    if (cd&&cd.fields) S.speakerColors=parseMapFields(cd.fields);
     S.lastSync = new Date();
     S.syncMsg = "✓ "+S.shows.length+" shows · "+wd.length+" songs · "+bd.length+" bits";
     saveCache(S.shows,S.songs,S.bits);
@@ -502,10 +509,18 @@ function renderCameronBit(bit) {
   app.appendChild(tb);
 
   // Speakers
-  const speakers=Array.isArray(bit.speakers)?bit.speakers:[];
+  const speakers=Array.isArray(bit.speakers)?bit.speakers:
+    (bit.speaker&&bit.speaker!=="—"?bit.speaker.split(", ").filter(Boolean):[]);
   if (speakers.length) {
     const sp=el("div","bit-speakers");
-    speakers.forEach(s=>sp.appendChild(el("span","bit-speaker-chip",s)));
+    speakers.forEach(s=>{
+      const chip=el("span","bit-speaker-chip",s);
+      const col=(S.speakerColors&&S.speakerColors[s])||"#8888aa";
+      chip.style.color=col;
+      chip.style.borderColor=col+"80";
+      chip.style.background=col+"22";
+      sp.appendChild(chip);
+    });
     app.appendChild(sp);
   }
 

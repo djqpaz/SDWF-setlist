@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { doc, onSnapshot, collection, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { useSpeakerColors } from "../context/SpeakerColorsContext";
 
 // Chord regex for distinguishing chord tokens from section labels
 const CH = /^[A-G][#b]?(maj|min|m|dim|aug|sus|add|M)?\d*(sus\d|add\d|[#b]\d+)*(\/[A-G][#b]?)?$/;
@@ -109,6 +110,7 @@ function SongCard({ song, index, showChords, editUrl }) {
 const APP_URL = `${window.location.origin}${window.location.pathname}`;
 
 export default function ChartsPage({ showId, songId }) {
+  const { speakerColors } = useSpeakerColors();
   const [show, setShow] = useState(null);
   const [songs, setSongs] = useState({});
   const [bits, setBits] = useState({});
@@ -408,9 +410,17 @@ export default function ChartsPage({ showId, songId }) {
                   <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: b.content ? 10 : 0 }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 16, color: dotColor, fontStyle: "italic", fontWeight: 600 }}>{b.title}</div>
-                      <div style={{ fontSize: 12, color: "#8888aa", marginTop: 2 }}>
-                        {b.type}{b.speaker && b.speaker !== "—" ? ` · ${b.speaker}` : ""}
-                        {b.duration ? ` · ${b.duration} min` : ""}
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 2, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 12, color: "#8888aa" }}>{b.type}{b.duration ? ` · ${b.duration} min` : ""}</span>
+                        {b.speaker && b.speaker !== "—" && b.speaker.split(", ").filter(Boolean).map(s => (
+                          <span key={s} style={{
+                            fontSize: 10, padding: "1px 7px", borderRadius: 99,
+                            background: (speakerColors[s] || "#8888aa") + "28",
+                            border: `1px solid ${(speakerColors[s] || "#8888aa") + "60"}`,
+                            color: speakerColors[s] || "#8888aa",
+                            fontWeight: "bold",
+                          }}>{s}</span>
+                        ))}
                       </div>
                     </div>
                     <span style={{ fontSize: 9, padding: "1px 8px", borderRadius: 99, border: `1px solid ${dotColor}`, color: dotColor, textTransform: "uppercase", letterSpacing: "0.1em" }}>bit</span>
