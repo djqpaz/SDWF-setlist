@@ -3,6 +3,55 @@
 Notable changes to the set list app, newest first. Dates mark when a batch of
 work shipped to the live site.
 
+## 2026-11-05 — Speaker color chips + Pi v1.6
+
+### Speaker colors — editable, Firestore-synced
+- Each speaker now has a distinct color: Brett=pink, Spencer=blue, Kenny=green, John=orange, Chris=purple, Matt=red, Dave=teal, All=white
+- Colors appear as chips everywhere a bit lists its speakers: Bit Manager, Setlist Builder (list rows + script modal), Band Charts, and the stage Prompter
+- **Color editor** in the Bit Manager: expand the new **SPEAKER COLORS** panel to change any speaker's color with a color picker — changes save to Firestore instantly and sync everywhere
+
+### Pi Prompter v1.6
+- Speaker chips on the Pi stage screen now use the same Firestore colors — fetched from `config/speakerColors` on every sync
+- Falls back to grey if a speaker isn't in the color map
+
+## 2026-11-01 — Bug fixes: bit modal, chart editor redirect, prompter text fit
+
+### Bit modal no longer stuck on mobile
+- The bit script modal on the main setlist page now renders via a React
+  portal directly to `document.body`, bypassing the app's nested
+  `overflow: hidden` containers that were causing `position: fixed` to
+  misbehave on iOS Safari
+
+### Chart editor → returns to Band Charts when done
+- Closing the chart editor now also closes the Song Manager and redirects
+  back to Band Charts (honoring the `returnTo` URL) when you came from
+  the **✎ Edit chart** button — previously it only closed the editor pane
+  and left Song Manager open, requiring a second dismiss
+
+### Prompter: dynamic text fit per section
+- Lyric font size now auto-fits each section so the content always fills
+  the screen without overflowing or scrolling — dense verses scale down,
+  short sections scale up, up to ~36px max
+
+## 2026-10-30 — Bit editor in Band Charts + 4 staging bits
+
+### ✎ Edit bit — inline editor on Band Charts page
+- Every Cameron Bit card in Band Charts now has a **✎ Edit bit** button
+  (same position as the **✎ Edit chart** button on song cards)
+- Opens a bottom-sheet editor with: Title, Type, Speakers, Duration, and
+  full Script textarea — save writes to Firestore live; changes appear
+  on-screen immediately without a page reload
+
+### 4 mid-song staging bits added for The Christmas Show
+- **Santa Claus — Santa Appearance**: Santa enters from backstage and
+  mingles with the audience during Song 2
+- **Jingle Bells — Kids on Stage**: Spencer wardrobe cue (scarf/gloves),
+  John repositions, Kenny calls kids up, Brett guides them to stage
+- **I Want An Alien — Alien Dancer**: LX UFO beams, alien volunteer
+  enters from offstage and dances during the instrumental break
+- **Run Run Rudolph — Reindeer Kids**: Front-row kids wear light-up
+  reindeer antlers and gallop; Spencer/Brett lead Rudolph singalong
+
 ## 2026-10-30 — Bit script viewer + bits in Band Charts
 
 ### Tap a bit to read its script
