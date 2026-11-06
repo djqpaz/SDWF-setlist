@@ -14,6 +14,7 @@ import { VIBE_COLORS } from "../data/songs";
 import { useSongs } from "../context/SongsContext";
 import { useCameronBits } from "../context/CameronBitsContext";
 import { useSpeakerColors } from "../context/SpeakerColorsContext";
+import { parseScriptLine } from "../speakerColors";
 
 const BIT_TYPE_COLORS = {
   "Narration":  "#4ecdc4",
@@ -293,11 +294,16 @@ export default function SetlistBuilder({ items = [], onChange, showId, baseUrl, 
             </div>
           </div>
           <div style={{ overflowY: "auto", padding: "14px 16px 24px" }}>
-            <pre style={{
-              margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word",
-              fontSize: 13, lineHeight: 1.7, color: colors.textPrimary,
-              fontFamily: "'Georgia', serif",
-            }}>{openedBit.content}</pre>
+            <div style={{ fontFamily: "'Georgia', serif", fontSize: 13, lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+              {openedBit.content.split("\n").map((line, i) => {
+                const { color, dim } = parseScriptLine(line, speakerColors);
+                return (
+                  <div key={i} style={{ color: color || (dim ? "#555577" : colors.textPrimary), fontStyle: dim ? "italic" : "normal" }}>
+                    {line || " "}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

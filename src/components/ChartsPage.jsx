@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { doc, onSnapshot, collection, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useSpeakerColors } from "../context/SpeakerColorsContext";
+import { parseScriptLine } from "../speakerColors";
 
 // Chord regex for distinguishing chord tokens from section labels
 const CH = /^[A-G][#b]?(maj|min|m|dim|aug|sus|add|M)?\d*(sus\d|add\d|[#b]\d+)*(\/[A-G][#b]?)?$/;
@@ -431,7 +432,16 @@ export default function ChartsPage({ showId, songId }) {
                     >✎ Edit bit</button>
                   </div>
                   {b.content && (
-                    <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: 13, lineHeight: 1.7, color: "#d0d0e8", fontFamily: "sans-serif" }}>{b.content}</pre>
+                    <div style={{ fontSize: 13, lineHeight: 1.7, fontFamily: "sans-serif" }}>
+                      {b.content.split("\n").map((line, li) => {
+                        const { color, dim } = parseScriptLine(line, speakerColors);
+                        return (
+                          <div key={li} style={{ color: color || (dim ? "#44445a" : "#d0d0e8"), fontStyle: dim ? "italic" : "normal", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                            {line || " "}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               );

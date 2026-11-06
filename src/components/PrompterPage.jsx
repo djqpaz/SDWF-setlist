@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { collection, doc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import { useSpeakerColors } from "../context/SpeakerColorsContext";
+import { parseScriptLine } from "../speakerColors";
 
 const CH = /^[A-G][#b]?(maj|min|m|dim|aug|sus|add|M)?\d*(sus\d|add\d|[#b]\d+)*(\/[A-G][#b]?)?$/;
 
@@ -92,8 +93,15 @@ function BitContent({ bit, wrapRef }) {
         ))}
       </div>
       {bit.content ? (
-        <div style={{ fontSize: "var(--bit-size, 22px)", lineHeight: 1.6, color: "#e8e8f0", whiteSpace: "pre-wrap", fontFamily: "inherit" }}>
-          {bit.content}
+        <div style={{ fontSize: "var(--bit-size, 22px)", lineHeight: 1.6, fontFamily: "inherit" }}>
+          {bit.content.split("\n").map((line, i) => {
+            const { color, dim } = parseScriptLine(line, speakerColors);
+            return (
+              <div key={i} style={{ color: color || (dim ? "#44445a" : "#e8e8f0"), fontStyle: dim ? "italic" : "normal", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                {line || " "}
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div style={{ color: "#333358", fontStyle: "italic", fontSize: 18, marginTop: 16 }}>No script for this bit.</div>

@@ -533,11 +533,24 @@ function renderCameronBit(bit) {
     body.appendChild(center);
   } else {
     const linesDiv=el("div","lines");
-    const paras=(bit.content||"").split(/\n\n+/).filter(p=>p.trim());
-    (paras.length?paras:[bit.content||""]).forEach(para=>{
-      const p=el("div","");
-      p.style.cssText="font:400 var(--lyric,34px)/1.6 var(--font);margin-bottom:20px;overflow-wrap:break-word;";
-      p.textContent=para.trim();
+    const sc=S.speakerColors||{};
+    (bit.content||"").split("\n").forEach(line=>{
+      const p=document.createElement("div");
+      p.style.cssText="font:400 var(--lyric,34px)/1.6 var(--font);overflow-wrap:break-word;min-height:1.6em;";
+      // Speaker line: NAME: dialogue
+      const spMatch=line.match(/^([A-Z][A-Z ]+?):\s*(.*)/);
+      if(spMatch){
+        const rawName=spMatch[1].trim();
+        const key=Object.keys(sc).find(k=>k.toUpperCase()===rawName);
+        if(key){p.style.color=sc[key]; p.style.fontWeight="600";}
+        else if(rawName==="LX"){p.style.color="#f4c542"; p.style.fontWeight="600";}
+      } else if(/^\[LX:/i.test(line)){
+        p.style.color="#f4c542";
+      } else if(/^\(.*\)\s*$/.test(line)||/^\*{1,2}[^*].*\*{1,2}\s*$/.test(line)){
+        p.style.color="#44445a"; p.style.fontStyle="italic";
+      }
+      p.textContent=line||"";
+      if(!line.trim()) p.style.minHeight="0.8em";
       linesDiv.appendChild(p);
     });
     // Auto-fit: shrink until content fits
