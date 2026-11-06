@@ -1,6 +1,6 @@
 export const DEFAULT_SPEAKER_COLORS = {
-  Brett:   "#f472b6",
-  Spencer: "#60a5fa",
+  Brett:   "#60a5fa",
+  Spencer: "#f472b6",
   Kenny:   "#4ade80",
   John:    "#fb923c",
   Chris:   "#c084fc",
