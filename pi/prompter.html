@@ -166,11 +166,17 @@ const VER = "v1.6";
 // v1.6 — Speaker color chips fetched from Firestore config/speakerColors
 const LONG_MS = 700; // long-press threshold
 
+// ── Default speaker colors (overridden by Firestore config/speakerColors) ─────
+const DEFAULT_SPEAKER_COLORS = {
+  Brett:"#60a5fa", Spencer:"#f472b6", Kenny:"#4ade80", John:"#fb923c",
+  Chris:"#c084fc", Matt:"#f87171", Dave:"#2dd4bf", All:"#e2e8f0"
+};
+
 // ── State ─────────────────────────────────────────────────────────────────────
 const S = {
   screen: "menu",   // menu | shows | setlist | live | options | sync | foot
   menuSel: 0, showSel: 0, songSel: 0, secSel: 0,
-  shows: [], songs: {}, bits: {}, speakerColors: {}, show: null, setlist: [],
+  shows: [], songs: {}, bits: {}, speakerColors: {...DEFAULT_SPEAKER_COLORS}, show: null, setlist: [],
   sections: [],     // parsed sections for current song [{label, lines}]
   syncing: false, syncMsg: "", lastSync: null,
 };
@@ -233,7 +239,7 @@ async function doSync() {
     S.shows = sd.map(parse).sort((a,b)=>(b.date||"").localeCompare(a.date||""));
     S.songs = {}; wd.map(parse).forEach(s=>{S.songs[String(s.id)]=s;});
     S.bits  = {}; bd.map(parse).forEach(b=>{S.bits[String(b.id)]=b;});
-    if (cd&&cd.fields) S.speakerColors=parseMapFields(cd.fields);
+    if (cd&&cd.fields) S.speakerColors={...DEFAULT_SPEAKER_COLORS,...parseMapFields(cd.fields)};
     S.lastSync = new Date();
     S.syncMsg = "✓ "+S.shows.length+" shows · "+wd.length+" songs · "+bd.length+" bits";
     saveCache(S.shows,S.songs,S.bits);
